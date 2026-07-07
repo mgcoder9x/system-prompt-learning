@@ -187,3 +187,82 @@ verified: true
 method: read-source
 status: active
 ```
+
+## TRD-007 — Coverage_Map đặt ở phía CURRICULUM (area_refs) vs phía BLUEPRINT (covered_by)
+
+```yaml
+id: TRD-007
+type: tradeoff
+date: 2026-07-07
+title: "Ánh xạ phủ (mỗi Mandatory_Area ↔ Curriculum_Point) lưu ở đâu: CurriculumPoint.area_refs (bên sửa được) hay Blueprint.covered_by (bên khóa khi approved)?"
+spec_ref: "mandatory-curriculum-framework R3.1/R3.5/R4.3; DEC-074 (QĐ-1); CR-0012; spec §3.6"
+summary: >
+  Coverage_Map là quan hệ 'mỗi Mandatory_Area bắt-buộc được phủ bởi ≥1 Curriculum_Point'. Phải lưu ánh xạ đó
+  ở MỘT phía. Chọn đặt ở phía curriculum: thêm CurriculumPoint.area_refs: list[str]=[] (id các area mà point
+  phủ).
+alternatives:
+  - "A. CurriculumPoint.area_refs (ĐÃ CHỌN): mapping ở phía curriculum — bên EDITABLE (curriculum sửa/chèn point tự do). Phủ = mỗi mandatory area id xuất hiện trong area_refs của ≥1 point."
+  - "B. Blueprint.covered_by: [cp-ids]: mapping ở phía blueprint — nhưng R4.3 KHÓA blueprint khi approved. Mỗi lần sửa curriculum (thêm/chèn/đổi point) lại phải sửa blueprint approved → buộc --amend --confirm liên tục → xung đột khóa + phá ý nghĩa 'approved = chuẩn ổn định'."
+chosen: "A — CurriculumPoint.area_refs (phía curriculum, editable)"
+rationale: >
+  Nguyên tắc gốc: đặt dữ-liệu-hay-đổi ở phía HAY ĐỔI (curriculum), không ở phía KHÓA (blueprint approved).
+  R4.3 quy định blueprint approved là chuẩn ràng buộc, chỉ sửa qua bước có xác nhận; nếu mapping nằm trong
+  blueprint thì mọi thao tác curriculum bình thường sẽ đụng blueprint approved → mâu thuẫn thiết kế. Đặt
+  area_refs ở CurriculumPoint giữ blueprint 'thuần khung' (chỉ khai báo mảng), curriculum 'thuần phủ' (khai
+  báo point nào phủ mảng nào) — phân tách trách nhiệm sạch. Toàn vẹn tham chiếu (area_refs trỏ area tồn tại)
+  do Blueprint_Validator kiểm (E-BP-AREA-REF-BROKEN), KHÔNG nhét vào model (giữ mã lỗi phân biệt).
+tradeoff_accepted: >
+  Chi phí: phải mở rộng schema curriculum (thêm area_refs) qua CR-0012 → CHẠM vào tính năng
+  curriculum-driven-learning ĐÃ hoàn tất. Giảm thiểu: field OPTIONAL default [] → curriculum cũ (không có
+  key này) parse nguyên vẹn, mọi test/luồng cũ xanh (tương thích ngược tuyệt đối). Đánh đổi chấp nhận được
+  vì phương án B tạo mâu thuẫn khóa nghiêm trọng hơn nhiều.
+evidence:
+  - "read-source: models.py CurriculumPoint.area_refs: list[str] = [] (dòng ~310, comment CR-0012 'Coverage_Map ... default [] tương thích ngược')"
+  - "read-source: spec §3.6 dòng 229 'Coverage_Map ... đặt ở phía curriculum, qua CurriculumPoint.area_refs[] ... chứ không phải blueprint (bên khóa khi approved) để tránh xung đột khóa'"
+  - "read-source: cr-0012-curriculum-area-refs.md (approved); changelog dòng cr-0012"
+  - "ran-test (phiên này): 505 passed (bao gồm test_session_curriculum_arearefs +5)"
+verified: true
+method: read-source
+status: active
+reversible: "Đảo sang B: gỡ area_refs khỏi CurriculumPoint + thêm covered_by vào Blueprint + chuyển logic phủ trong _check_blueprint sang đọc blueprint-side. Nhưng sẽ tái tạo xung đột khóa R4.3 → không nên."
+```
+
+## TRD-008 — Áp khung lên curriculum ĐÃ teachable: GHI NHẬN ràng buộc (blueprint-first) vs XÂY lệnh retrofit area_refs
+
+```yaml
+id: TRD-008
+type: tradeoff
+date: 2026-07-07
+title: "Phát hiện giới hạn workflow (xem NOTE-039): không có lệnh gắn area_refs vào Curriculum_Point ĐÃ CÓ → có nên xây lệnh retrofit ngay không?"
+spec_ref: "mandatory-curriculum-framework R2 (dựng khi bắt đầu topic)/R5.4 (backward-compat)/R7.1 (lệnh mới qua CR); NOTE-039; DEC-075"
+summary: >
+  Truy vết luồng (NOTE-039) cho thấy: nếu một topic đã có curriculum teachable KHÔNG mang area_refs TRƯỚC, thì
+  về sau KHÔNG approve được blueprint lên topic đó (E-BP-POINT-OUTSIDE + E-BP-AREA-UNCOVERED) và KHÔNG có lệnh
+  nào gắn area_refs vào point đã có (cmd_curriculum từ chối nếu curriculum tồn tại; cmd_curriculum_insert chỉ
+  THÊM point mới). Chỉ đi được luồng blueprint-first. Câu hỏi: xây lệnh retrofit ngay, hay ghi nhận ràng buộc?
+alternatives:
+  - "A. GHI NHẬN ràng buộc (ĐÃ CHỌN — ở thời điểm này): tài liệu hoá 'blueprint-first là luồng được hỗ trợ' (dựng blueprint → approve/draft → dựng curriculum có area_refs → dạy). ZERO code, an toàn tuyệt đối."
+  - "B. XÂY lệnh retrofit: thêm năng lực gắn/sửa area_refs cho Curriculum_Point đã có (vd /curriculum --set-area-refs cp-XXX <area-ids>) → cho phép luồng curriculum-first rồi áp-khung-về-sau."
+chosen: "A — GHI NHẬN ràng buộc (blueprint-first), CHƯA xây retrofit"
+rationale: >
+  Ba lý do CHÍNH XÁC (không phóng đại): (1) KHÔNG có gì hỏng — validator ép ĐÚNG bất biến R3/R5 (đã probe xác
+  nhận ở phiên trước); đây là THIẾU NĂNG LỰC, không phải bug. (2) KHÔNG vi phạm requirements — R5.4 (no-blueprint
+  / draft → hành vi cũ) vẫn giữ; R2 mô tả dựng blueprint 'khi bắt đầu topic' (blueprint-first là luồng chính
+  spec hình dung); KHÔNG requirement nào bắt buộc retrofit. (3) vault ship RỖNG (DEC-054) → KHÔNG người dùng
+  thật nào đang bị kẹt; luồng blueprint-first đã giao đủ giá trị cốt lõi (E2E DEC-074 Wave 7 chứng minh).
+  Thêm lệnh mới = mở rộng scope, và R7.1 BẮT BUỘC qua CR được duyệt → là quyết định của owner, không tự thêm.
+tradeoff_accepted: >
+  Chi phí của A: người dùng đã lỡ dựng curriculum teachable trước rồi mới muốn áp khung sẽ vào ngõ cụt (phải
+  xoá/dựng lại curriculum thủ công). Chấp nhận được vì vault rỗng khi ship + luồng đúng (blueprint-first) rẻ
+  và tự nhiên. Nếu owner muốn hệ 'chống mọi thứ tự thao tác' (thương mại, nhiều người dùng có dữ liệu cũ) →
+  chọn B: mở CR mới + SPEC-first (requirements bổ sung → design → tasks → RED-first) đầy đủ.
+recommendation_for_owner: "Quyết: có nâng 'retrofit area_refs cho curriculum đã có' thành năng lực chính thức (phương án B) không? Nếu CÓ → tôi mở CR + thiết kế + kịch bản test chuẩn trước khi code. Nếu KHÔNG → giữ A (đã tài liệu hoá)."
+evidence:
+  - "read-source (phiên này): session.py cmd_curriculum '~L751 if cpath.is_file(): raise ... chỉ DỰNG mới' (từ chối ghi đè); cmd_curriculum_insert chỉ chèn point MỚI (không sửa area_refs point cũ)"
+  - "read-source: KHÔNG có backend nào set area_refs trên point đã có (grep cmd_* — chỉ cmd_curriculum/cmd_curriculum_insert đọc area_refs từ JSON đầu vào)"
+  - "cross-ref: NOTE-039 (phát hiện + root-cause đầy đủ); DEC-075 (phủ là cổng teachable)"
+verified: true
+method: read-source
+status: open-question
+reversible: "n/a (chưa triển khai gì; chỉ ghi nhận trade-off + chờ owner quyết B)"
+```

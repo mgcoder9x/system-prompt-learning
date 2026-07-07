@@ -179,3 +179,42 @@ method: ran-test
 status: active
 reversible: "Revert 6 khối sửa spec về v2.6 + move cr-0009 approved→(pending|rejected) + gỡ dòng changelog. Code CR-0007/0008 KHÔNG phụ thuộc chuỗi spec (drift-guard bám commands.md/validation_rules, không bám prose spec) → gỡ spec không làm đỏ test."
 ```
+
+## DEV-007 — Nâng spec v2.7 → v2.8 (thêm khung-giáo-trình-bắt-buộc Topic_Blueprint) qua CR-0014
+
+```yaml
+id: DEV-007
+type: deviation
+date: 2026-07-07
+title: "Sửa spec gốc PROMPT_LEARNING_SYSTEM.md: thêm §3.6 Topic_Blueprint + Blueprint_Validator (7 mã E-BP-*) + vòng đời draft→approved→amend + Coverage_Map qua curriculum.area_refs; bump v2.7→v2.8, qua CR-0014 approved"
+spec_ref: "CR-0014 approved; spec mandatory-curriculum-framework (.kiro/specs); DEC-074/075; CR-0011..0013; DEV-003/DEV-006 (tiền lệ bump spec qua CR — v2.5→v2.6, v2.6→v2.7)"
+change: >
+  Spec v2.7 mô tả Curriculum + Curriculum_Validator nhưng CHƯA có khái niệm khung bắt buộc. Tính năng
+  mandatory-curriculum-framework (đã hiện thực CR-0011..0013, 505 test PASS) thiếu gốc spec. Đổi (chỉ THÊM,
+  tương thích ngược): (1) tiêu đề + dòng trạng thái v2.7→v2.8 (dòng 1 + preamble dòng 8–11); (2) §3.2 layout
+  topic thêm blueprint.md (TÙY CHỌN, "xem 3.6"); (3) §3.6 MỚI: Topic_Blueprint (Mandatory_Area id ma-NNN /
+  order hoán vị / title / mandatory / source_refs) + status {draft, approved} + Blueprint_Validator 7 mã
+  E-BP-* + Coverage_Map đặt ở CurriculumPoint.area_refs + quy tắc "phủ là CỔNG teachable" (approved-gated,
+  backward-compat); (4) §11A registry thêm dòng /blueprint (v2.8).
+rationale: >
+  Spec là 'hiến pháp' → đổi phải qua CR §12 (không sửa nóng), như DEV-003 (v2.5→v2.6) và DEV-006 (v2.6→v2.7).
+  Áp SAU khi toàn bộ code + test XANH (spec phản ánh cái ĐÃ kiểm-được, không hứa trước — CR-0014 mục 5,
+  tiền lệ CR-0009 §5). Bump v2.8 là MINOR (thêm tính năng, không phá cấu trúc): topic không có blueprint.md
+  vẫn hợp lệ, validator chỉ kích khi file tồn tại. KHÔNG bump _system/VERSION (=1): blueprint schema_version=1
+  additive → không migration (tách semver TÀI LIỆU vs schema DỮ LIỆU, xem DEV-004/DEV-006). Changelog cột
+  VERSION v2.7→v2.8; DEC-074/075 là chuỗi hiện thực.
+note_section_number: >
+  CR-0014 body (mục 3) ghi 'mở rộng §3.5' — đó là tham chiếu TRƯỚC khi triển khai (blueprint dự kiến nối vào
+  §3.5 giáo trình). Spec THẬT sau khi áp đặt Topic_Blueprint thành §3.6 MỚI (ngay sau §3.5 curriculum), và
+  preamble spec trỏ 'xem 3.6'. Ghi rõ để tránh nhầm khi đối chiếu CR ↔ spec.
+evidence:
+  - "read-source (phiên này): PROMPT_LEARNING_SYSTEM.md dòng 1 '# ... (v2.8 — Thêm Khung Giáo Trình Bắt Buộc)'; dòng 8–11 preamble 'mở rộng khung-giáo-trình-bắt-buộc v2.8 ngày 2026-07-07 (CR-0011..0014 ... xem 3.6)'"
+  - "read-source: §3.2 dòng 179 'blueprint.md (TÙY CHỌN, v2.8) ... xem 3.6'; §3.6 dòng 222–232 (Topic_Blueprint + areas[] + status + Coverage_Map curriculum.area_refs + phủ-là-cổng-teachable); §11A dòng 1008 '/blueprint <topic> <areas-json> (v2.8)'"
+  - "read-source: change_requests/approved/cr-0014-spec-blueprint.md (status approved, date_decided 2026-07-07, version_bump 'v2.7 -> v2.8'); changelog.md dòng cr-0014 (VERSION v2.7 → v2.8)"
+  - "read-source: _system/VERSION giữ '1' (không đổi — blueprint additive)"
+  - "ran-test (phiên này, máy toann/py3.13.12): full suite 505 passed; validate --scope full pass:true (spec là tài liệu, không đổi hành vi code)"
+verified: true
+method: ran-test
+status: active
+reversible: "Revert khối §3.2/§3.6/§11A + tiêu đề về v2.7 + move cr-0014 approved→(pending|rejected) + gỡ dòng changelog. Code CR-0011..0013 KHÔNG phụ thuộc prose spec (drift-guard bám commands.md/validation_rules/schema, không bám prose) → gỡ spec không làm đỏ test."
+```

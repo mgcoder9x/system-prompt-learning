@@ -1292,3 +1292,129 @@ method: ran-command
 status: resolved
 reversible: "n/a (sửa môi trường; .venv luôn dựng lại từ pyproject/requirements)."
 ```
+
+## NOTE-038 — Audit đối kháng tính năng blueprint: KHÔNG bug + 6 regression bền (đồng bộ vào notes.md)
+
+```yaml
+id: NOTE-038
+type: note
+date: 2026-07-07
+title: "Audit đối kháng Topic_Blueprint (chủ động, theo phương pháp đã lộ DEC-073) — KHÔNG tìm thấy bug; thành 6 regression bền test_blueprint_audit.py"
+spec_ref: "mandatory-curriculum-framework; DEC-073/074/075; NOTE-036 (bài học E2E happy-path bỏ sót bug tích hợp)"
+reconcile_note: >
+  Entry này ĐÃ có dòng cuộn trong index.yaml (mục NOTE-038) từ phiên blueprint, NHƯNG khối đầy đủ CHƯA được
+  ghi vào notes.md (phiên đó chỉ cập nhật index.yaml). Phiên này (toann/py3.13.12) bổ sung khối đầy đủ để
+  đồng bộ file ↔ index (kỷ luật README: 'ghi vào file loại tương ứng VÀ cuộn vào index.yaml'). Nội dung
+  đã TÁI KIỂM: 6 test thuộc test_blueprint_audit.py nằm trong 505 passed chạy thật phiên này.
+summary: >
+  Sau khi blueprint hoàn tất, chủ động audit đối kháng (đúng phương pháp đã giúp Gemini lộ bug DEC-073 mà
+  E2E happy-path bỏ sót). Probe các khoảng E2E happy-path chưa phủ, biến thành 6 regression BỀN
+  (test_blueprint_audit.py). KHÔNG tìm thấy bug — báo trung thực.
+scenarios_locked:
+  - "A1: /done auto-advance DƯỚI blueprint approved (DEC-065 × blueprint) — _check_blueprint chạy trong transaction-overlay FULL, area_refs bảo toàn, coverage giữ → commit PASS."
+  - "A2: overlay tường minh KHÔNG false-positive (blueprint/curriculum nằm TRONG vault, khác exam/ sibling NGOÀI vault của DEC-073 → overlay-an-toàn by-construction)."
+  - "A3: robustness blueprint.md sửa-tay-hỏng (areas=chuỗi / status ngoài enum) → E-SCHEMA sạch, KHÔNG crash (lớp DEC-071, qua _load_blueprint_validated)."
+  - "A4: INV-16 — source_refs abspath → E-PORT-ABSPATH."
+  - "A5: tất định thứ tự phát mã E-BP-*."
+  - "A6: amend approved XÓA area đang-được-curriculum-tham-chiếu → E-BP-AREA-REF-BROKEN → rollback (toàn vẹn tham chiếu giữ vững)."
+conclusion: >
+  Tầng blueprint VỮNG dưới tích hợp + overlay + robustness. KHÔNG như DEC-073 (lần đó exam/ là sibling NGOÀI
+  vault nên overlay sinh false-positive); blueprint nằm TRONG vault → overlay an toàn by-construction, nay có
+  test khoá lại. 499→505 passed (+6).
+evidence:
+  - "read-source: validator/tests/phase12/test_blueprint_audit.py (6 test A1–A6)"
+  - "ran-test (phiên này): full suite 505 passed (6 test audit nằm trong đó); validate --scope full pass:true"
+verified: true
+method: ran-test
+status: active
+reversible: "n/a (thêm regression test; gỡ chỉ làm giảm độ phủ)"
+```
+
+---
+
+## NOTE-039 — ⚠️ Giới hạn workflow: KHÔNG áp được blueprint approved lên curriculum ĐÃ teachable (không có retrofit area_refs)
+
+```yaml
+id: NOTE-039
+type: note
+date: 2026-07-07
+title: "Blueprint-first là luồng DUY NHẤT đi được: curriculum teachable dựng TRƯỚC (không area_refs) → không approve blueprint về sau + không có lệnh gắn area_refs cho point đã có"
+spec_ref: "mandatory-curriculum-framework R2/R3/R5.1/R5.4; DEC-074/075; TRD-008 (quyết định xử lý); E-BP-POINT-OUTSIDE/E-BP-AREA-UNCOVERED"
+finding: >
+  Truy vết luồng approve (đọc code THẬT phiên này, không đoán). Nếu topic đã có curriculum teachable KHÔNG
+  mang area_refs, rồi mới muốn áp một blueprint approved lên topic đó:
+    - approve chạy transaction-FULL → _check_blueprint (coverage teachable-gated, DEC-075) kích vì
+      curriculum.teachable==true → mọi point cũ thiếu area_refs vi phạm E-BP-POINT-OUTSIDE + các mandatory
+      area chưa phủ vi phạm E-BP-AREA-UNCOVERED → transaction ABORT → approve KHÔNG thành (blueprint giữ draft).
+    - KHÔNG có lệnh nào gắn/sửa area_refs cho Curriculum_Point ĐÃ CÓ: cmd_curriculum TỪ CHỐI nếu curriculum.md
+      tồn tại ('chỉ DỰNG mới'); cmd_curriculum_insert chỉ THÊM point mới (mang area_refs), không sửa point cũ.
+  ⇒ Ngõ cụt: curriculum-first (teachable) rồi áp-khung-về-sau KHÔNG đi được.
+root_cause (KHÔNG phải ngọn): >
+  Bản chất là THIẾU NĂNG LỰC (không có đường retrofit area_refs), KHÔNG phải bug. Validator ép ĐÚNG bất biến:
+  R3.3 (còn mảng bắt buộc chưa phủ → giữ chưa-teachable) + R5.1/R5.2 (point phải map area khi blueprint
+  approved). Cổng coverage=teachable-gate (DEC-075) là thiết kế đúng (tránh brick-vault). Vấn đề chỉ là
+  KHÔNG có công cụ đưa curriculum-đã-lỡ-teachable vào trạng thái phủ đủ.
+not_a_bug_not_a_violation: >
+  (1) KHÔNG phải bug — validator đúng R3/R5 (đã probe xác nhận phiên trước). (2) KHÔNG vi phạm requirements —
+  R5.4 backward-compat (no-blueprint/draft → hành vi cũ) vẫn giữ; KHÔNG requirement nào bắt buộc retrofit;
+  R2 hình dung dựng blueprint 'khi bắt đầu topic' (blueprint-first). (3) vault ship RỖNG → không ai bị kẹt.
+supported_workflow: >
+  BLUEPRINT-FIRST: /blueprint <topic> (dựng draft) → [tùy chọn --approve] → /curriculum <topic> với area_refs
+  trỏ các Mandatory_Area → (nếu blueprint còn draft) /blueprint --approve. Vì area_refs được nhập NGAY lúc
+  dựng curriculum, coverage phủ đủ → teachable + approve đều PASS. (Có thể dựng curriculum khi blueprint còn
+  DRAFT: E-BP-AREA-REF-BROKEN vẫn ép ref hợp lệ, nhưng coverage chưa ép tới khi approved + teachable.)
+disposition: "Xử lý theo TRD-008 = GHI NHẬN ràng buộc (blueprint-first), CHƯA xây retrofit. Nếu owner muốn luồng curriculum-first→áp-khung → mở CR (phương án B của TRD-008)."
+evidence:
+  - "read-source (phiên này): session.py cmd_curriculum '~L751 if cpath.is_file(): raise SessionError(... chỉ DỰNG mới)'"
+  - "read-source: session.py cmd_curriculum_insert (chỉ insert point mới; đọc area_refs từ --point JSON; không có nhánh sửa area_refs point cũ)"
+  - "read-source: spec §3.6 dòng 232 'Phủ là CỔNG của teachable ... chỉ ép khi approved VÀ teachable==true'"
+  - "cross-ref: TRD-008 (quyết định), DEC-075 (cổng teachable)"
+verified: true
+method: read-source
+status: active
+reversible: "n/a (ghi nhận sự thật + luồng đúng; đường retrofit là tính năng tương lai qua CR nếu owner chọn)"
+```
+
+---
+
+## NOTE-040 — Chuyển máy THẬT lần 4 (về toann) + re-verify baseline 505 phiên này + quan sát bản sao system-prompt2
+
+```yaml
+id: NOTE-040
+type: note
+date: 2026-07-07
+title: "Máy toann phiên này: .venv trỏ máy cũ (k.nguyen.manh.toan) → rebuild scoop py3.13.12; re-verify 505 passed + validate PASS + selfcheck NGUYÊN VẸN. Phát hiện thư mục CHA có git repo sẵn (từ phiên blueprint) + bản sao lồng system-prompt2/"
+spec_ref: "INV-16 (portable, venv không mang theo); NOTE-001/034/037 (chuỗi chuyển máy); DEC-074 (git init ở thư mục cha)"
+summary: >
+  Tiếp quản trên máy toann (workspace C:\\Users\\toann\\Desktop\\WORK_PRO\\system-prompt). .venv mang theo
+  đường dẫn interpreter máy cũ 'k.nguyen.manh.toan\\...\\Python311' + không có 'py' launcher trên toann
+  (giống NOTE-037 chiều ngược). Dựng lại venv bằng scoop python 3.13.12
+  (C:\\Users\\toann\\scoop\\apps\\python313\\current\\python.exe) + pip install --require-hashes -r
+  requirements.txt + pip install pytest. Re-verify TOÀN BỘ: selfcheck NGUYÊN VẸN, pytest 505 passed,
+  validate --scope full pass:true errors:[] warnings:[]. Chỉ .venv dựng lại (đúng INV-16); dữ liệu + code +
+  journal thuần-file mang đi nguyên vẹn.
+git_state_observed: >
+  Thư mục CHA (system-prompt/) ĐÃ là git repo (khởi tạo ở phiên blueprint — DEC-074), HEAD ở commit 788b440
+  'audit: adversarial blueprint audit ... [505 passed]' với 9 commit từ baseline da15d9b. git status: end.md
+  modified (do đọc/đối chiếu) + system-prompt2/ untracked. → khác NOTE-001/034/037 (lúc đó KHÔNG phải git repo).
+system_prompt2_observation: >
+  Có thư mục system-prompt/system-prompt2/system-prompt/ai-learning-system/ — một BẢN SAO LỒNG NHAU của cả
+  dự án (chứa StarHillGuestApp/VisionPlatform cùng cấp → có vẻ là backup/workspace khác của owner). Bản sao
+  này LÀM Ô NHIỄM grep/file_search (khớp trùng đường dẫn). CẢNH BÁO cho AI phiên sau: LUÔN dùng
+  excludePattern 'system-prompt2/**' khi grep/search để chỉ làm trên dự án CHÍNH. KHÔNG tự xóa system-prompt2
+  (có thể là backup có chủ đích của owner — thao tác xóa là hard-to-reverse, cần owner xác nhận).
+python_version_note: >
+  Máy này 505 passed trên Python 3.13.12; chuỗi lịch sử: NOTE-034 (3.11 lẫn 3.13 đều 452), NOTE-037 (3.13.12,
+  454). Khẳng định lại NOTE-002 (lock đa-phiên-bản, wheel cp313 có sẵn) + bất biến hành vi cross-Python trong
+  dải requires-python '>=3.10'.
+evidence:
+  - "ran-command (phiên này): .venv\\Scripts\\python cũ báo 'No Python at ...k.nguyen.manh.toan\\...Python311'; where.exe python → scoop\\apps\\python313; python -m venv .venv (3.13.12)"
+  - "ran-command: pip install --require-hashes -r requirements.txt → Successfully installed fsrs-6.3.1 pydantic-2.13.4 ... ; pip install pytest"
+  - "ran-command: selfcheck.py → 'KẾT QUẢ CẤU TRÚC: NGUYÊN VẸN'"
+  - "ran-test: pytest validator/tests → 505 passed; validate.py --scope full --json → pass:true, errors:[], warnings:[]"
+  - "ran-command: git log --oneline → HEAD 788b440 (9 commit); git status → 'M end.md', '?? system-prompt2/'"
+verified: true
+method: ran-test
+status: active
+reversible: "n/a (việc môi trường; .venv luôn dựng lại từ requirements.txt)"
+```
