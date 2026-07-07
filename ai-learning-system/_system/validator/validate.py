@@ -533,21 +533,24 @@ def _check_blueprint(topic_dir: Path, vault_root: Path, rep: Report):
                 if aref not in area_id_set:
                     rep.err("E-BP-AREA-REF-BROKEN", rel,
                             f"Curriculum_Point {p.id!r}: area_ref {aref!r} không trỏ Mandatory_Area tồn tại (INV-03)")
-    # Kiểm PHỦ chỉ khi blueprint đã 'approved' (QĐ-2 / R5.4 backward-compat)
-    if bp.status == "approved":
+    # Kiểm PHỦ = CỔNG của `teachable` (không phải bất biến vault độc lập). Chỉ ép khi:
+    #   blueprint đã 'approved' (QĐ-2/R5.4) VÀ curriculum tồn tại VÀ curriculum.teachable == true.
+    # Suy ra từ R3.3 "còn area chưa phủ → GIỮ curriculum chưa-teachable" (contrapositive: teachable ⟹ phủ đủ).
+    # Nếu ép theo status='approved' đơn thuần → approved-blueprint-CHƯA-có-curriculum sẽ brick vault
+    # (mọi transaction abort — lớp bug DEC-073) + chặn oan luồng blueprint→approve→dựng-curriculum.
+    if bp.status == "approved" and cur is not None and cur.teachable:
         covered: set = set()
-        if cur is not None:
-            for p in cur.points:
-                covered |= set(p.area_refs)
-                # E-BP-POINT-OUTSIDE: khi approved, mọi point phải ánh xạ >=1 area
-                if not p.area_refs:
-                    rep.err("E-BP-POINT-OUTSIDE", rel,
-                            f"Curriculum_Point {p.id!r} không ánh xạ Mandatory_Area nào (blueprint approved)")
+        for p in cur.points:
+            covered |= set(p.area_refs)
+            # E-BP-POINT-OUTSIDE: curriculum teachable dưới blueprint approved → mọi point phải ánh xạ >=1 area
+            if not p.area_refs:
+                rep.err("E-BP-POINT-OUTSIDE", rel,
+                        f"Curriculum_Point {p.id!r} không ánh xạ Mandatory_Area nào (blueprint approved + curriculum teachable)")
         # E-BP-AREA-UNCOVERED: mỗi area mandatory phải được >=1 point phủ
         for a in areas:
             if a.mandatory and a.id not in covered:
                 rep.err("E-BP-AREA-UNCOVERED", rel,
-                        f"Mandatory_Area {a.id!r} (bắt buộc) chưa được Curriculum_Point nào phủ")
+                        f"Mandatory_Area {a.id!r} (bắt buộc) chưa được Curriculum_Point nào phủ (curriculum teachable)")
 
 
 def _check_exam_results(topic_dir: Path, vault_root: Path, rep: Report, real_vault_root: Path | None = None):
