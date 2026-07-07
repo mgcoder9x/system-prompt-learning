@@ -304,6 +304,10 @@ class CurriculumPoint(_Strict):
     status: CurriculumStatusT
     lesson_id: Optional[str] = None
     source_refs: list[str] = []
+    # CR-0012 (Coverage_Map): id các Mandatory_Area mà point này phủ. Default [] → tương thích ngược
+    # tuyệt đối (curriculum cũ không có key này vẫn parse). Ràng buộc "area_refs trỏ area tồn tại" là
+    # NGỮ NGHĨA → Blueprint_Validator (E-BP-AREA-REF-BROKEN), KHÔNG nhét vào model (giữ mã lỗi phân biệt).
+    area_refs: list[str] = []
 
     @field_validator("id")
     @classmethod
@@ -371,4 +375,49 @@ class ExamResults(_Strict):
         ids = [r.submission_id for r in self.results]
         if len(ids) != len(set(ids)):
             raise ValueError("exam submission id trùng (INV-04)")
+        return self
+
+
+# ---- blueprint (Topic_Blueprint — khung giáo trình bắt buộc, CR-0011) ----
+BlueprintStatusT = Literal["draft", "approved"]
+
+
+class MandatoryArea(_Strict):
+    """Một mảng kiến thức BẮT BUỘC của Topic_Blueprint. Ràng buộc NGỮ NGHĨA (id duy nhất, order hoán vị
+    1..N, title không rỗng, source_refs trỏ thật) do Blueprint_Validator (validate.py) kiểm với mã lỗi
+    E-BP-* RIÊNG — KHÔNG nhét vào model để giữ mã lỗi phân biệt (cùng triết lý CurriculumPoint)."""
+    id: str
+    order: int = Field(ge=1)
+    title: str
+    mandatory: bool
+    source_refs: list[str] = []
+
+    @field_validator("id")
+    @classmethod
+    def _maid(cls, v):
+        if not re.match(r"^ma-\S+$", v):
+            raise ValueError(f"mandatory area id sai pattern: {v!r}")
+        return v
+
+
+class Blueprint(_Strict):
+    schema_name: str = Field(alias="schema")
+    schema_version: int
+    topic_id: str
+    status: BlueprintStatusT
+    areas: list[MandatoryArea] = []
+    created: date
+    updated: date
+
+    @field_validator("schema_name")
+    @classmethod
+    def _schema(cls, v):
+        if v != "blueprint":
+            raise ValueError(f"schema phải 'blueprint', gặp {v!r}")
+        return v
+
+    @model_validator(mode="after")
+    def _invariants(self):
+        if self.updated < self.created:
+            raise ValueError("updated < created (INV-05)")
         return self

@@ -27,6 +27,7 @@ MODEL_BY_SCHEMA = {
     "review_item": M.ReviewItem,
     "curriculum": M.Curriculum,          # CR-0007
     "exam_results": M.ExamResults,       # CR-0007
+    "blueprint": M.Blueprint,            # CR-0011
 }
 
 

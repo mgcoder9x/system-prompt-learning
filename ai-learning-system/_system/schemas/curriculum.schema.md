@@ -28,7 +28,13 @@ thật (`E-CURR-LESSON-LINK`), `source_refs` trỏ file reference tồn tại (`
 | `points` | – | list[CurriculumPoint] | `{id: cp-*, order:int≥1, objective, status, lesson_id?, source_refs[]}` (mặc định `[]`) |
 
 `CurriculumPoint` (nested): `id`(cp-*), `order`(int≥1), `objective`(str), `status`(not_started|in_progress|done),
-`lesson_id`(str|null, ánh xạ lesson), `source_refs`(list[str], đường dẫn tương đối trong `reference/`).
+`lesson_id`(str|null, ánh xạ lesson), `source_refs`(list[str], đường dẫn tương đối trong `reference/`),
+`area_refs`(list[str], mặc định `[]`, CR-0012 — id các Mandatory_Area mà point phủ; ràng buộc "trỏ area
+tồn tại" do Blueprint_Validator `E-BP-AREA-REF-BROKEN` kiểm, không nhét vào model).
+
+> **Lưu ý drift-guard:** `schema_fields` bên dưới chỉ liệt kê field **top-level** của `Curriculum` (test
+> `test_schemas_consistency` duyệt `model.model_fields`). `area_refs` là field NESTED trong `CurriculumPoint`
+> → KHÔNG nằm trong `schema_fields`, mô tả ở prose trên. Teeth thật của `area_refs` đến từ Blueprint_Validator.
 
 ### schema_fields (máy đọc)
 

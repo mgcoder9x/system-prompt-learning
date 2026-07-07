@@ -34,6 +34,7 @@ _SCHEMA_MODELS = {
     "sources": M.Sources,
     "curriculum": M.Curriculum,        # CR-0007/Task 3: parse curriculum.md qua model (sai cấu trúc → E-SCHEMA)
     "exam_results": M.ExamResults,     # CR-0007/Task 8
+    "blueprint": M.Blueprint,          # CR-0011: parse blueprint.md qua model (sai cấu trúc → E-SCHEMA)
 }
 _PENDING_SCHEMAS: set[str] = set()  # tất cả schema GĐ1 đã có model (P03 mở rộng xong)
 _REQUIRED_LESSON_HEADINGS = ["Mục tiêu", "Sessions"]
@@ -589,7 +590,8 @@ _VAULT_FORBIDDEN_NAMES = {"package.json", "package-lock.json", "yarn.lock", "req
                           "pom.xml", "gemfile", "gemfile.lock", "uv.lock"}
 _SYSTEM_DATA_NAMES = {"vault_state.md", "topic_state.md", "lesson_state.md", "sources.md",
                       "lesson.md", "lesson_notes.md", "topic.md",
-                      "curriculum.md", "exam_results.md"}  # CR-0007 (data-file mới)
+                      "curriculum.md", "exam_results.md",  # CR-0007 (data-file mới)
+                      "blueprint.md"}  # CR-0011 (Topic_Blueprint data-file)
 _SYSTEM_SKIP_DIRS = {"validator", ".venv", "venv", "__pycache__", ".pytest_cache",
                      ".cache", ".tx", "repo_lab", ".git"}
 
