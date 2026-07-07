@@ -1,0 +1,37 @@
+# Cấu hình FSRS cố định — spec mục 8.3. Bất biến theo fsrs_config_version.
+# Weights lấy TRỰC TIẾP từ default của fsrs==6.3.1 (spike 2026-07-01), ghi cứng để không phụ thuộc default thư viện.
+fsrs_config_version: 1
+fsrs_package_version: "6.3.1"          # pin exact; đổi version = tạo config_version mới
+
+# 21 weights của FSRS-6 (Scheduler.parameters mặc định của 6.3.1)
+parameters:
+  - 0.212
+  - 1.2931
+  - 2.3065
+  - 8.2956
+  - 6.4133
+  - 0.8334
+  - 3.0194
+  - 0.001
+  - 1.8722
+  - 0.1666
+  - 0.796
+  - 1.4835
+  - 0.0614
+  - 0.2629
+  - 1.6483
+  - 0.6014
+  - 1.8729
+  - 0.5425
+  - 0.0912
+  - 0.0658
+  - 0.1542
+
+desired_retention: 0.9
+learning_steps_seconds: [60, 600]      # (1m, 10m) — mặc định 6.3.1
+relearning_steps_seconds: [600]        # (10m,)
+maximum_interval_days: 36500
+enable_fuzzing: false                  # BẮT BUỘC false — fuzzing phá tái lập
+serialization:
+  round_decimals: 4                    # làm tròn stability/difficulty khi lưu (spec 8.3)
+mastered_stability_days: 60            # ngưỡng mastered (spec 6.2)

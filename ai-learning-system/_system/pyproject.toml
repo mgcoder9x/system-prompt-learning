@@ -1,0 +1,18 @@
+[project]
+name = "ai-learning-system-validator"
+version = "0.1.0"
+description = "Validator + tooling cho hệ thống học bằng AI (spec PROMPT_LEARNING_SYSTEM.md)"
+requires-python = ">=3.10"
+dependencies = [
+    "fsrs==6.3.1",
+    "pydantic>=2.13,<3",
+    "PyYAML>=6,<7",
+    "markdown-it-py>=4,<5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+# Môi trường tin cậy: dựng từ lock exact.
+#   uv sync --frozen   (khi có uv)
+#   pip install --require-hashes -r requirements.txt   (fallback, máy chỉ có pip)

@@ -1,0 +1,22 @@
+# Python virtual environments (KHÔNG portable — dựng lại theo START_HERE/HANDOFF)
+**/.venv/
+.venv/
+
+# Python caches
+**/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test / tooling caches
+**/.pytest_cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Transaction work dirs (runtime, không phải trạng thái bền)
+**/.tx/
