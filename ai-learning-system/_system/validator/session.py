@@ -836,6 +836,137 @@ def cmd_curriculum_insert(vault: Path, system: Path, topic_id: str, insert_at: i
     return _run_tx(vault, system, writes, now=at)  # FULL: E-CURR-* (order hoán vị/dup-id/ref) gate; sai → rollback
 
 
+# ---- blueprint (Topic_Blueprint — khung giáo trình bắt buộc, CR-0011/0013) ----
+def _load_blueprint_validated(bpath: Path) -> tuple[dict, str]:
+    """blueprint.md validate qua M.Blueprint (xem _load_model_validated) — sửa-tay-hỏng → E-SCHEMA sạch."""
+    return _load_model_validated(bpath, M.Blueprint)
+
+
+def _parse_areas_json(areas_json: str, existing_ids=None) -> list[dict]:
+    """Parse JSON list mảng cho build/edit/amend → list dict {id, order, title, mandatory, source_refs}.
+    existing_ids=None (BUILD): mọi id sinh mới ma-001..N theo vị trí. existing_ids=set (EDIT/AMEND): item
+    có 'id' phải trỏ area đang có (GIỮ id ổn định — R1.2); item không 'id' → sinh ma-{max+1} duy nhất."""
+    try:
+        raw = json.loads(areas_json)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise SessionError(f"--areas không phải JSON hợp lệ: {e}")
+    if not isinstance(raw, list) or not raw:
+        raise SessionError("--areas phải là JSON list không rỗng các mảng bắt buộc")
+    max_suf = 0
+    for aid in (existing_ids or set()):
+        m = re.match(r"^ma-(\d+)$", str(aid))
+        if m:
+            max_suf = max(max_suf, int(m.group(1)))
+    areas, seen = [], set()
+    for i, a in enumerate(raw, start=1):
+        if not isinstance(a, dict) or not str(a.get("title", "")).strip():
+            raise SessionError(f"mảng #{i} thiếu 'title' không rỗng")
+        srefs = a.get("source_refs") or []
+        if not isinstance(srefs, list) or not all(isinstance(s, str) for s in srefs):
+            raise SessionError(f"mảng #{i} 'source_refs' phải là list chuỗi")
+        mand = a.get("mandatory", True)
+        if not isinstance(mand, bool):
+            raise SessionError(f"mảng #{i} 'mandatory' phải là bool")
+        if existing_ids is None:
+            aid = f"ma-{i:03d}"
+        elif a.get("id") is not None:
+            aid = str(a["id"])
+            if aid not in existing_ids:
+                raise SessionError(f"mảng #{i}: id {aid!r} không trỏ Mandatory_Area đang có (giữ id ổn định R1.2)")
+        else:
+            max_suf += 1
+            aid = f"ma-{max_suf:03d}"
+        if aid in seen:
+            raise SessionError(f"mảng #{i}: id {aid!r} trùng trong danh sách")
+        seen.add(aid)
+        areas.append({"id": aid, "order": i, "title": str(a["title"]),
+                      "mandatory": mand, "source_refs": srefs})
+    return areas
+
+
+def cmd_blueprint(vault: Path, system: Path, topic_id: str, areas_json: str, at: datetime):
+    """Dựng topics/<topic>/blueprint.md (status=draft) từ danh sách mảng bắt buộc (CR-0013, transaction-FULL).
+    `areas_json`: JSON list [{title, mandatory?, source_refs?}]. Backend gán ma-NNN + order 1..N TẤT ĐỊNH +
+    mandatory mặc định true. Chỉ DỰNG mới (đã có → lỗi; sửa qua --edit/--amend). Thiếu tham số → hỏi lại/lỗi
+    (R2.5, không đoán). Validator gate E-BP-* (cấu trúc sai → ABORT)."""
+    vault, system = Path(vault), Path(system)
+    _recover_first(vault)
+    if not topic_id.strip() or "/" in topic_id:
+        raise SessionError(f"topic_id không hợp lệ: {topic_id!r}")
+    topic_dir = vault / "topics" / topic_id
+    if not topic_dir.is_dir():
+        raise SessionError(f"topic {topic_id!r} không tồn tại — /blueprint cần topic đã có (dùng /learn trước)")
+    bpath = topic_dir / "blueprint.md"
+    if bpath.is_file():
+        raise SessionError(f"topic {topic_id!r} đã có blueprint.md — /blueprint chỉ DỰNG mới (sửa: --edit/--amend)")
+    areas = _parse_areas_json(areas_json, existing_ids=None)
+    vs_raw = _load_vault_state(vault)[0]
+    today = at.astimezone(FA._parse_offset(vs_raw.get("utc_offset", "+00:00"))).date()
+    raw = {
+        "schema": "blueprint", "schema_version": vs_raw.get("schema_version", 1),
+        "topic_id": topic_id, "status": "draft", "areas": areas,
+        "created": today, "updated": today,
+    }
+    body = (f"\n\n# Khung giáo trình bắt buộc — {topic_id}\n\n"
+            "Danh sách Mandatory_Area (zero→chuyên-gia), sinh bởi /blueprint. Giáo trình phải phủ đủ khi approved.\n")
+    writes = [TX.Write(bpath.relative_to(vault).as_posix(), _dump_state(raw, body), expected_read_hash=None)]
+    return _run_tx(vault, system, writes, now=at)  # FULL: _check_blueprint gate E-BP-* (abort nếu sai)
+
+
+def _blueprint_set_areas(vault: Path, system: Path, topic_id: str, areas_json: str, at: datetime,
+                         *, require_status: str, confirm: bool = False):
+    """Chung cho edit (draft) + amend (approved): thay danh sách areas, GIỮ id ổn định (R1.2). transaction-FULL
+    re-validate E-BP-* → rollback nếu sai (R4.4). require_status khoá đúng trạng thái được phép sửa."""
+    vault, system = Path(vault), Path(system)
+    _recover_first(vault)
+    if not topic_id.strip() or "/" in topic_id:
+        raise SessionError(f"topic_id không hợp lệ: {topic_id!r}")
+    bpath = vault / "topics" / topic_id / "blueprint.md"
+    if not bpath.is_file():
+        raise SessionError(f"topic {topic_id!r} chưa có blueprint — dùng /blueprint dựng trước")
+    bp_raw, bp_body = _load_blueprint_validated(bpath)
+    status = bp_raw.get("status")
+    if status != require_status:
+        raise SessionError(f"blueprint {topic_id!r} ở trạng thái {status!r} — thao tác này cần {require_status!r}")
+    if require_status == "approved" and not confirm:
+        raise SessionError("sửa blueprint đã approved cần --confirm tường minh (R4.3)")
+    existing_ids = {str(a.get("id")) for a in (bp_raw.get("areas") or [])}
+    bp_raw["areas"] = _parse_areas_json(areas_json, existing_ids=existing_ids)
+    bp_raw["updated"] = at.astimezone(FA._parse_offset(_load_vault_state(vault)[0].get("utc_offset", "+00:00"))).date()
+    writes = [TX.Write(bpath.relative_to(vault).as_posix(), _dump_state(bp_raw, bp_body),
+                       expected_read_hash=VIO.content_hash(bpath))]
+    return _run_tx(vault, system, writes, now=at)
+
+
+def cmd_blueprint_edit(vault: Path, system: Path, topic_id: str, areas_json: str, at: datetime):
+    """Sửa areas khi blueprint còn 'draft' (R4.1). Approved → từ chối (dùng --amend --confirm)."""
+    return _blueprint_set_areas(vault, system, topic_id, areas_json, at, require_status="draft")
+
+
+def cmd_blueprint_amend(vault: Path, system: Path, topic_id: str, areas_json: str, confirm: bool, at: datetime):
+    """Sửa areas khi blueprint 'approved' — CHỈ khi confirm=True (R4.3/4.4). transaction-FULL re-validate."""
+    return _blueprint_set_areas(vault, system, topic_id, areas_json, at, require_status="approved", confirm=confirm)
+
+
+def cmd_blueprint_approve(vault: Path, system: Path, topic_id: str, at: datetime):
+    """Chuyển draft→approved (R4.2). transaction-FULL gate Blueprint_Validator; FAIL → rollback, giữ draft (R4.6)."""
+    vault, system = Path(vault), Path(system)
+    _recover_first(vault)
+    if not topic_id.strip() or "/" in topic_id:
+        raise SessionError(f"topic_id không hợp lệ: {topic_id!r}")
+    bpath = vault / "topics" / topic_id / "blueprint.md"
+    if not bpath.is_file():
+        raise SessionError(f"topic {topic_id!r} chưa có blueprint — dùng /blueprint dựng trước")
+    bp_raw, bp_body = _load_blueprint_validated(bpath)
+    if bp_raw.get("status") == "approved":
+        raise SessionError(f"blueprint {topic_id!r} đã approved")
+    bp_raw["status"] = "approved"
+    bp_raw["updated"] = at.astimezone(FA._parse_offset(_load_vault_state(vault)[0].get("utc_offset", "+00:00"))).date()
+    writes = [TX.Write(bpath.relative_to(vault).as_posix(), _dump_state(bp_raw, bp_body),
+                       expected_read_hash=VIO.content_hash(bpath))]
+    return _run_tx(vault, system, writes, now=at)
+
+
 def cmd_next_lesson(vault: Path, system: Path, topic_id: str, at: datetime):
     """'Nhảy bài' (CR-0008, transaction-FULL): sinh lesson kế cho current_point của giáo trình.
     Tạo lessons/lesson-NNN từ template (objective = objective của current_point), set point.lesson_id,
@@ -1153,7 +1284,7 @@ def _print_readonly(p: dict) -> None:
             print(f"  ⛔ {b}")
 
 
-CLI_COMMANDS = ("learn", "schedule", "status", "resume", "gaps", "test", "source", "collect", "curriculum", "next_lesson", "grade", "ask", "review", "done", "forget")  # backend session.py (khớp commands.md)
+CLI_COMMANDS = ("learn", "schedule", "status", "resume", "gaps", "test", "source", "collect", "curriculum", "blueprint", "next_lesson", "grade", "ask", "review", "done", "forget")  # backend session.py (khớp commands.md)
 
 _READONLY_COMMANDS = ("schedule", "status", "gaps", "test")  # không transaction, không committed
 # LƯU Ý: "resume" KHÔNG còn read-only từ CR-0003 (mở phiên = ghi vault_state, transaction-LIGHT).
@@ -1196,6 +1327,14 @@ def _build_parser() -> argparse.ArgumentParser:
                             help="(CHÈN R8) vị trí 1..N+1 chèn điểm mới")
             sp.add_argument("--point", default=None,
                             help='(CHÈN R8) JSON một điểm: {"objective": "...", "source_refs": [...]}')
+        elif name == "blueprint":
+            sp.add_argument("--topic", required=True, help="topic_id dựng/sửa khung bắt buộc")
+            sp.add_argument("--areas", default=None,
+                            help='(DỰNG/EDIT/AMEND) JSON list mảng: [{"title":"...","mandatory":true,"source_refs":[...]}]')
+            sp.add_argument("--edit", action="store_true", help="(EDIT) sửa areas khi draft")
+            sp.add_argument("--approve", action="store_true", help="(APPROVE) chuyển draft→approved")
+            sp.add_argument("--amend", action="store_true", help="(AMEND) sửa areas khi approved (cần --confirm)")
+            sp.add_argument("--confirm", action="store_true", help="xác nhận tường minh cho --amend approved (R4.3)")
         elif name == "next_lesson":
             sp.add_argument("--topic", required=True, help="topic_id sinh lesson kế cho current_point")
         elif name == "grade":
@@ -1311,6 +1450,24 @@ def main(argv=None) -> int:
                     raise SessionError("/curriculum cần --points (DỰNG) hoặc --insert-at + --point (CHÈN)")
                 committed, rep = cmd_curriculum(Path(args.vault), Path(args.system),
                                                 args.topic, args.points, at)
+        elif args.command == "blueprint":
+            if args.approve:
+                committed, rep = cmd_blueprint_approve(Path(args.vault), Path(args.system), args.topic, at)
+            elif args.amend:
+                if not args.areas:
+                    raise SessionError("--amend cần --areas (JSON list mảng)")
+                committed, rep = cmd_blueprint_amend(Path(args.vault), Path(args.system),
+                                                     args.topic, args.areas, args.confirm, at)
+            elif args.edit:
+                if not args.areas:
+                    raise SessionError("--edit cần --areas (JSON list mảng)")
+                committed, rep = cmd_blueprint_edit(Path(args.vault), Path(args.system),
+                                                    args.topic, args.areas, at)
+            else:  # DỰNG mới
+                if not args.areas:
+                    raise SessionError("/blueprint cần --areas (DỰNG) hoặc --edit/--approve/--amend")
+                committed, rep = cmd_blueprint(Path(args.vault), Path(args.system),
+                                               args.topic, args.areas, at)
         elif args.command == "next_lesson":
             committed, rep = cmd_next_lesson(Path(args.vault), Path(args.system), args.topic, at)
         elif args.command == "grade":

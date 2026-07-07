@@ -45,6 +45,6 @@ không sửa nóng. Chi tiết cú pháp/phạm vi-ghi/cần-xác-nhận: xem `c
 router:
   intents: [new_topic, lesson, side_question, review, source_ingestion, system_change, unclear]
   commands: ["/learn", "/review", "/resume", "/status", "/schedule", "/ask", "/source", "/collect",
-             "/curriculum", "/next-lesson", "/grade", "/test", "/gaps", "/skip", "/fix", "/system", "/done",
+             "/curriculum", "/blueprint", "/next-lesson", "/grade", "/test", "/gaps", "/skip", "/fix", "/system", "/done",
              "/forget", "/validate"]
 ```
