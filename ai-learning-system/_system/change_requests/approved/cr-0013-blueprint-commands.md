@@ -3,9 +3,9 @@
 ```yaml
 id: cr-0013
 title: "Đăng ký lệnh blueprint vào registry/router + curriculum nhận area_refs"
-status: pending
+status: approved
 date_opened: 2026-07-07
-date_decided: null
+date_decided: 2026-07-07
 version_bump: null   # thêm lệnh, không đổi schema-version
 related: [spec mandatory-curriculum-framework R2/R4/R5/R7, CR-0011, CR-0012, CR-0008 (tiền lệ đăng ký lệnh)]
 recommendation: "Thêm 1 lệnh blueprint (đa chế độ qua cờ) + curriculum nhận area_refs; drift-guard registry↔CLI↔router"

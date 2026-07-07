@@ -3,9 +3,9 @@
 ```yaml
 id: cr-0014
 title: "Mở rộng PROMPT_LEARNING_SYSTEM.md §3.5: Topic_Blueprint + Blueprint_Validator + 7 mã E-BP-* + vòng đời approve"
-status: pending
+status: approved
 date_opened: 2026-07-07
-date_decided: null
+date_decided: 2026-07-07
 version_bump: "v2.7 -> v2.8"   # tài liệu spec; _system/VERSION giữ = 1 (schema dữ liệu additive)
 related: [spec mandatory-curriculum-framework toàn bộ, CR-0009 (tiền lệ mở rộng spec v2.6→v2.7), CR-0011..0013]
 recommendation: "Áp SAU khi code XANH (spec phản ánh cái kiểm-được, không hứa trước — tiền lệ CR-0009 §5)"

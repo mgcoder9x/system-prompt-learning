@@ -2477,3 +2477,65 @@ status: active
 credit: "Gemini 3.5 Flash (via Antigravity, cross-AI handoff #2) phát hiện bug tích hợp THẬT mà pilot/E2E của ta bỏ sót — điểm cộng lớn. Fix của nó (bản copy) không dùng (portability); workspace chính áp fix gốc đúng."
 reversible: "Gỡ tham số real_vault_root khỏi 5 hàm validate + dòng transaction.validate_staged (trả về resolve theo vault_root) + xoá test_tx_exam_overlay.py. KHÔNG nên: tái lập false-positive abort mọi full-tx sau khi có exam_results."
 ```
+
+
+## DEC-074 — Tính năng mandatory-curriculum-framework (Topic_Blueprint) — SPEC-first + RED-first, CR-0011..0014
+
+```yaml
+id: DEC-074
+type: decision
+date: 2026-07-07
+title: "Thêm tầng khung giáo trình BẮT BUỘC (Topic_Blueprint) trên curriculum-driven-learning: schema blueprint + Blueprint_Validator 7 mã E-BP-* + lệnh /blueprint (build/edit/approve/amend) + Coverage_Map qua CurriculumPoint.area_refs. SPEC-first (requirements→design→tasks) rồi RED-first từng wave; git baseline trước khi làm sâu"
+spec_ref: "spec mandatory-curriculum-framework R1..R7; CR-0011 (schema blueprint) / CR-0012 (area_refs) / CR-0013 (lệnh) / CR-0014 (spec §3.6 v2.7→v2.8); tiền lệ DEC-055..069 (curriculum-driven-learning), DEC-008 (drift-guard schema), DEC-034/058 (enforcement không cần CR mã lỗi)"
+summary: >
+  Owner yêu cầu 'khung sườn cố định' để mọi AI (giỏi/dở) bám khi dạy, không bỏ sót mảng. Đã tạo spec đầy đủ
+  (requirements owner-viết + design + tasks do phiên này soạn), rồi triển khai 8 wave RED-first, verify sau
+  mỗi wave (full suite + validate --scope full PASS), commit git mỗi mốc. Baseline 458→499 passed (+41).
+  QĐ-1 Coverage_Map đặt ở CurriculumPoint.area_refs (phía curriculum EDITABLE) chứ không blueprint (phía KHÓA
+  khi approved) — tránh xung đột R4.3. QĐ-2/3 phủ là CỔNG teachable (xem DEC-075). Blueprint là artifact
+  TÙY CHỌN wire theo mẫu _check_curriculum/_check_exam_results (chỉ kiểm khi file tồn tại) → topic không
+  blueprint / blueprint draft giữ hành vi cũ (P9 backward-compat).
+key_decisions:
+  - "Wave 2 schema: model Blueprint+MandatoryArea (strict, id ^ma-\\S+$, status Literal draft|approved) + CurriculumPoint.area_refs:list[str]=[] (additive, default [] → curriculum cũ parse nguyên vẹn). Đăng ký blueprint vào _SCHEMA_MODELS + _SYSTEM_DATA_NAMES (INV-18) + schemas/blueprint.schema.md + drift-guard MODEL_BY_SCHEMA. area_refs là field NESTED → drift-guard schema (top-level) KHÔNG kiểm → nói thẳng ở prose + teeth thật đến từ Blueprint_Validator (không giả vờ RED)."
+  - "Wave 3/4 Blueprint_Validator (_check_blueprint, wire cuối _validate_topic): E-BP-DUP-ID/ORDER/EMPTY-TITLE/REF-BROKEN (cấu trúc, áp cả draft) + E-BP-AREA-REF-BROKEN (ánh xạ point→area tồn tại INV-03, áp cả draft) + E-BP-AREA-UNCOVERED/POINT-OUTSIDE (phủ, teachable-gated — DEC-075). Sai schema/status → E-SCHEMA sẵn có (bỏ mã trùng, tiền lệ DEC-058). 7 mã, drift-guard validation_rules 2 chiều."
+  - "Wave 5 lệnh /blueprint đa-chế-độ qua cờ (--edit/--approve/--amend --confirm) — MỘT tên lệnh, drift-guard bất biến (tiền lệ DEC-063/069). Build gán ma-NNN order 1..N; edit/amend GIỮ id ổn định (R1.2) qua _parse_areas_json(existing_ids): item có 'id' phải trỏ area cũ, item không id → ma-{max+1} duy nhất. approve draft→approved transaction-FULL gate; amend approved BẮT BUỘC --confirm (R4.3/4.4). Đăng ký CLI_COMMANDS/parser/dispatch/commands.md/router đồng bộ (3 drift-guard xanh)."
+  - "Wave 6 curriculum mang area_refs (cmd_curriculum + cmd_curriculum_insert đọc area_refs JSON, default []). Xác minh GỐC: cmd_next_lesson set cp['lesson_id'] IN-PLACE trên cur_raw → area_refs bảo toàn (không rebuild point làm mất field)."
+  - "Wave 7 E2E: blueprint(draft)→edit→approve→curriculum(phủ đủ)→validate PASS→next-lesson; ca âm thiếu phủ→ABORT E-BP-AREA-UNCOVERED; amend-thêm-mandatory-mới khi teachable→ABORT (guarantee giữ vững); backward-compat topic không blueprint."
+  - "Wave 8 áp CR-0011..0014 pending→approved + changelog + HUONG_DAN (/blueprint) + spec §3.6 v2.7→v2.8 + START_HERE v2.8. _system/VERSION GIỮ =1 (schema dữ liệu additive, không migration — tách semver tài liệu vs schema, DEV-004/006)."
+  - "An toàn dài hạn: khởi tạo git ở thư mục CHA (bao spec + đơn vị) + .gitignore (venv/cache) + commit baseline xanh TRƯỚC khi sửa sâu → mọi thay đổi diff/revert được (thư mục trước đó KHÔNG phải git repo)."
+evidence:
+  - "ran-test: full suite 499 passed (458 baseline + 41: 1 schema + 9 bp-structural + 6 bp-coverage + 15 lệnh + 5 area_refs + 4 E2E - 1 gộp/đổi tên); ran-command: validate --scope full pass:true errors:[] warnings:[] sau mỗi wave; selfcheck NGUYÊN VẸN."
+  - "read-source: _check_curriculum/_check_exam_results (mẫu artifact tùy chọn), cmd_curriculum/insert (mẫu transaction-FULL), cmd_next_lesson (in-place lesson_id), test_schemas_consistency/commands_registry/router/huong_dan (drift-guard)."
+  - "ran-command teeth-probe: vô hiệu block coverage → 2-3 test coverage chuyển RED, phần còn lại xanh → chứng minh check có răng thật."
+verified: true
+method: ran-test
+```
+
+## DEC-075 — Root-fix: coverage (phủ blueprint) là CỔNG của teachable, KHÔNG phải bất biến vault độc lập
+
+```yaml
+id: DEC-075
+type: decision
+date: 2026-07-07
+title: "E-BP-AREA-UNCOVERED / E-BP-POINT-OUTSIDE chỉ fire khi blueprint approved VÀ curriculum tồn tại VÀ curriculum.teachable==true — KHÔNG phải mọi lúc approved. Phát hiện khi truy vết luồng approve TRƯỚC khi viết lệnh"
+spec_ref: "spec mandatory-curriculum-framework R3.3 (còn mảng chưa phủ → GIỮ curriculum chưa-teachable), R3.4, R4.2 (approve), R5.4 (backward-compat); tiền lệ DEC-073 (check optional-artifact làm brick vault qua transaction-abort cascade)"
+summary: >
+  Trong lúc chuẩn bị viết cmd_blueprint_approve, truy vết luồng: approve ghi status=approved rồi
+  transaction-FULL validate. Nếu coverage gate CHỈ theo status=='approved' thì: (a) approved-blueprint-CHƯA-
+  có-curriculum → E-BP-AREA-UNCOVERED → validate FULL FAIL → BRICK VAULT (mọi transaction sau abort — đúng
+  lớp bug DEC-073); (b) chặn OAN luồng tự nhiên blueprint→approve→dựng-curriculum (chicken-egg, không bao
+  giờ approve được). Đọc gộp R3.3 'còn mảng bắt buộc chưa phủ → GIỮ curriculum chưa-teachable' cho
+  contrapositive: teachable ⟹ phủ đủ. Vậy phủ là CỔNG của teachable, không phải bất biến vault standalone.
+key_decisions:
+  - "Gate đúng: if bp.status=='approved' and cur is not None and cur.teachable → mới ép E-BP-AREA-UNCOVERED/POINT-OUTSIDE. Ma trận: (no curriculum)→PASS; (teachable=false draft-curriculum)→PASS; (teachable=true thiếu phủ)→FAIL; (teachable=true phủ đủ)→PASS. Draft blueprint: không bao giờ ép (R5.4)."
+  - "E-BP-AREA-REF-BROKEN (toàn vẹn tham chiếu INV-03) VẪN ungated (fire bất kể draft/approved/teachable) — ref gãy luôn là lỗi, khác với 'chưa phủ đủ' (điều kiện chưa-sẵn-sàng-dạy)."
+  - "cmd_curriculum đặt teachable=True lúc dựng → nếu thiếu phủ dưới approved-blueprint, transaction-FULL abort → teachable=true KHÔNG tồn tại bền → R3.3/R3.4 thỏa tự nhiên qua cơ chế transaction (không cần cổng riêng)."
+  - "Guarantee kiểm-được: amend approved thêm mandatory-area mới khi đang có curriculum teachable phủ-đủ-cũ → coverage vỡ → transaction abort/rollback → không thể có curriculum teachable dưới approved-blueprint mà thiếu phủ (test_e2e_amend_add_mandatory_breaks_coverage)."
+  - "code(test sửa)-lệch-thiết-kế-đúng → KHÔNG cần CR (tiền lệ DEC-029/072). Sửa cùng wave trước khi commit code sai ra ngoài."
+evidence:
+  - "read-source: truy vết cmd_blueprint_approve → _run_tx → validate_staged (FULL) → _check_blueprint; xác nhận cmd_curriculum đặt teachable=True (session.py)."
+  - "ran-command teeth-probe: gate=False → test_approved_uncovered_area_fails + test_approved_point_outside_fails RED (2 fail), 5 test còn lại PASS → teeth xác nhận đúng 2 mã coverage."
+  - "ran-test: test_blueprint_coverage 7 test (gồm test_approved_not_teachable_no_coverage_error + test_approved_no_curriculum_passes mã hoá ma trận) PASSED; full suite 499 passed; validate --scope full PASS."
+verified: true
+method: ran-test
+```

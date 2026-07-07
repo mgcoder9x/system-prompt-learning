@@ -35,7 +35,8 @@ học tuần tự) rồi sinh nhiều bài bám theo. Vòng này KHÔNG bắt bu
 | Bạn muốn | Nói / gõ | Điều xảy ra |
 |---|---|---|
 | Nạp tài liệu tham chiếu | "thu tài liệu này" hoặc `/collect` | AI lưu lát cắt tài liệu vào `reference/` của chủ đề (đầu vào để dựng giáo trình) |
-| Dựng giáo trình | "lập giáo trình Docker" hoặc `/curriculum` | Tạo `curriculum.md` — các **điểm cần học** theo thứ tự; chỉ "được-phép-dạy" khi giáo trình hợp lệ |
+| Dựng khung bắt buộc | "lập khung Docker" hoặc `/blueprint` | Tạo `blueprint.md` — **các mảng BẮT BUỘC** (zero→chuyên-gia), trạng thái `draft`; duyệt (`--approve`) → thành chuẩn ràng buộc mà giáo trình phải phủ đủ |
+| Dựng giáo trình | "lập giáo trình Docker" hoặc `/curriculum` | Tạo `curriculum.md` — các **điểm cần học** theo thứ tự; chỉ "được-phép-dạy" khi giáo trình hợp lệ (và phủ đủ khung nếu khung đã duyệt) |
 | Chèn điểm giữa chừng | "thêm một điểm học vào giữa" hoặc `/curriculum --insert-at` | Chèn điểm mới vào vị trí bạn muốn, giữ nguyên các điểm cũ + tiến độ đã học (R8) |
 | Kiểm giáo trình | `/curriculum --check` | Báo cáo giáo trình PASS/FAIL (chỉ đọc, không đổi gì) |
 | Học bài kế | "bài tiếp theo" hoặc `/next-lesson` | Sinh bài mới cho **điểm đang học**; học xong (`/done`) đạt cổng hiểu → giáo trình **tự tiến** sang điểm kế |
@@ -60,7 +61,7 @@ học tuần tự) rồi sinh nhiều bài bám theo. Vòng này KHÔNG bắt bu
 
 ```yaml
 commands: ["/learn", "/review", "/resume", "/status", "/schedule", "/ask", "/source",
-           "/collect", "/curriculum", "/next-lesson", "/grade",
+           "/collect", "/curriculum", "/blueprint", "/next-lesson", "/grade",
            "/test", "/gaps", "/skip", "/again", "/hard", "/good", "/easy",
            "/done", "/system", "/forget", "/fix", "/validate"]
 ```

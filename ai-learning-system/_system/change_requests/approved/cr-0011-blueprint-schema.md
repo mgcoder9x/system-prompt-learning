@@ -3,9 +3,9 @@
 ```yaml
 id: cr-0011
 title: "Thêm schema dữ liệu học blueprint (Topic_Blueprint: danh sách Mandatory_Area zero→chuyên-gia)"
-status: pending
+status: approved
 date_opened: 2026-07-07
-date_decided: null
+date_decided: 2026-07-07
 version_bump: null   # schema_version file mới = 1; KHÔNG đổi file cũ → không bump VERSION hệ
 related: [spec mandatory-curriculum-framework R1/R6/R7, CR-0007 (tiền lệ schema), DEC-008 (drift-guard schema)]
 recommendation: "THÊM schema blueprint qua model pydantic + schemas/blueprint.schema.md + drift-guard (đồng nhất cơ chế hiện có)"

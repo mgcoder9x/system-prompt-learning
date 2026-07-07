@@ -1,10 +1,13 @@
-# Bản Thiết Kế Hệ Thống Học Bằng AI (v2.7 — Thêm Học Theo Giáo Trình)
+# Bản Thiết Kế Hệ Thống Học Bằng AI (v2.8 — Thêm Khung Giáo Trình Bắt Buộc)
 
 > Trạng thái: **đã chốt v2.1** ngày 2026-06-30, **vá thực thi v2.2**, **vá chính xác v2.3**,
 > **vá dependency/IO v2.4**, **vá schema card/edge v2.5** ngày 2026-07-01,
 > **vá theo SPIKE FSRS thật v2.6** ngày 2026-07-01 (F-A: bỏ State.New; F-B: due_date là trục chuẩn — xem A.7),
 > **mở rộng học-theo-giáo-trình v2.7** ngày 2026-07-06 (CR-0009: thêm khái niệm Curriculum nhiều bài, vùng
-> `reference/`, vùng `exam/` — THÊM tính năng, KHÔNG phá cấu trúc cũ; topic không có `curriculum.md` vẫn hợp lệ).
+> `reference/`, vùng `exam/` — THÊM tính năng, KHÔNG phá cấu trúc cũ; topic không có `curriculum.md` vẫn hợp lệ),
+> **mở rộng khung-giáo-trình-bắt-buộc v2.8** ngày 2026-07-07 (CR-0011..0014: thêm `Topic_Blueprint` — khung
+> các Mandatory_Area zero→chuyên-gia + Blueprint_Validator ép giáo trình phủ đủ khung khi đã duyệt — xem 3.6;
+> THÊM tính năng, tương thích ngược: topic không có `blueprint.md` vẫn hợp lệ nguyên vẹn).
 > Engine lịch ôn = FSRS; validation là lõi với mô hình **"toàn vẹn cấu trúc đúng tuyệt đối + tầng
 > phán đoán audit được"** (Class A đúng tuyệt đối; B/C/D có dấu vết, KHÔNG tự nhận là chân lý — đọc
 > mục 0.3 về giới hạn thực thi); một nguồn sự thật duy nhất; số file tối giản; rubric rời rạc +
@@ -173,6 +176,7 @@ topics/topic-name/
   topic.md           # mục tiêu topic + section `## Knowledge Map` (bản đồ kiến thức) + danh mục lesson
   topic_state.md     # FRONT-MATTER: trạng thái topic + lịch ôn SINH TỰ ĐỘNG + bảng đánh giá
   sources.md         # nguồn học, mỗi mục có field status (raw/processing/confirmed/rejected)
+  blueprint.md       # (TÙY CHỌN, v2.8) khung bắt buộc: các Mandatory_Area zero→chuyên-gia — xem 3.6
   curriculum.md      # (TÙY CHỌN, v2.7) giáo trình nhiều bài: danh sách điểm cần học có thứ tự — xem 3.5
   reference/         # (TÙY CHỌN, v2.7) lát cắt tài liệu tham chiếu (CHỈ .md) để dựng giáo trình — xem 3.4
   exam_results.md    # (TÙY CHỌN, v2.7) bản ghi CHẤM bài thực hành (metadata, KHÔNG code) — xem 3.4
@@ -214,6 +218,19 @@ Với chủ đề lớn, một topic có thể có **giáo trình (Curriculum)**
 **Bổ sung điểm giữa chừng (R8):** có thể chèn một Curriculum_Point vào vị trí xác định (`/curriculum --insert-at <pos> --point <json>`) — điểm mới nhận `order=pos`, các điểm từ vị trí đó dịch +1 (giữ hoán vị 1..N+1), id mới duy nhất ổn định; id/tiến độ điểm cũ và `current_point` GIỮ NGUYÊN; validator re-check E-CURR-* trong cùng transaction (sai → rollback).
 
 **Curriculum_Validator** (mở rộng của validator, xem `_system/rules/validation_rules.md`) kiểm cấu trúc/tham chiếu và phát 7 mã lỗi Class A: `E-CURR-DUP-ID`, `E-CURR-ORDER`, `E-CURR-EMPTY-OBJECTIVE`, `E-CURR-POINTER`, `E-CURR-LESSON-LINK`, `E-CURR-REF-BROKEN`, và `E-EXAM-REF-BROKEN` (cho `exam_results.md`). Sai schema chung vẫn do `E-SCHEMA` bắt (không nhân mã trùng). Đây là **Class A** (toàn vẹn cấu trúc/tham chiếu); còn "giáo trình đủ sâu/rộng/chính xác về tri thức" là **Class D** (người/AI đánh giá, không có mã lỗi).
+
+### 3.6. Khung Giáo Trình Bắt Buộc `blueprint.md` — Topic_Blueprint (v2.8)
+
+Trên tầng giáo trình, một topic có thể có **khung bắt buộc (Topic_Blueprint)** — bản tuyên bố các **mảng kiến thức bắt buộc (Mandatory_Area)** sắp theo lộ trình zero→chuyên-gia. Blueprint là **rào chắn (guardrail)**: khi đã duyệt, giáo trình PHẢI phủ đủ mọi mảng bắt buộc mới được-phép-dạy. `blueprint.md` là front-matter máy-kiểm:
+
+- `areas[]`: mỗi mảng có `id` (`ma-NNN`), `order` (hoán vị 1..N), `title` (không rỗng), `mandatory` (bool bắt-buộc/tùy-chọn), `source_refs[]` (trỏ file trong `reference/`).
+- `status`: vòng đời `{draft, approved}` — `draft` sửa tự do; `approved` là chuẩn ràng buộc, chỉ sửa qua bước có xác nhận tường minh (`--amend --confirm`).
+
+**Coverage_Map — ánh xạ phủ:** đặt ở phía curriculum, qua `CurriculumPoint.area_refs[]` (id các Mandatory_Area mà point phủ). Đặt ở curriculum (bên sửa được) chứ không phải blueprint (bên khóa khi approved) để tránh xung đột khóa. Mỗi `area_refs[i]` phải trỏ mảng tồn tại (INV-03).
+
+**Phủ là CỔNG của `teachable`, KHÔNG phải bất biến vault độc lập:** kiểm phủ chỉ ép khi blueprint đã `approved` VÀ `curriculum.teachable == true` (suy từ "còn mảng bắt buộc chưa phủ → giữ curriculum chưa-teachable"). Do đó: approved-blueprint-chưa-có-curriculum vẫn hợp lệ (không brick vault, không chặn luồng blueprint→approve→dựng-curriculum); topic chưa có blueprint / blueprint còn draft → giữ hành vi curriculum-driven cũ (tương thích ngược).
+
+**Blueprint_Validator** (mở rộng của validator) phát 7 mã lỗi Class A: `E-BP-DUP-ID`, `E-BP-ORDER`, `E-BP-EMPTY-TITLE`, `E-BP-REF-BROKEN` (cấu trúc/tham chiếu, áp cả draft), `E-BP-AREA-REF-BROKEN` (ánh xạ point→area trỏ mảng tồn tại, áp cả draft), `E-BP-AREA-UNCOVERED` + `E-BP-POINT-OUTSIDE` (phủ, chỉ khi approved + teachable). Sai schema chung vẫn do `E-SCHEMA` bắt. Class A = toàn vẹn khung + quan hệ phủ; còn "khung đủ tầm chuyên gia / nội dung mảng đúng-sâu" là **Class D** (người/AI đánh giá, không có mã lỗi).
 
 ---
 
@@ -988,6 +1005,7 @@ AI:  Đã tạo topic "docker" với 5 lesson: [1] Container là gì → [2] Ima
 | `/collect <topic> <slug> <nội dung>` | (v2.7) Ghi lát cắt tài liệu tham chiếu | `topics/<topic>/reference/<slug>.md` (transaction-LIGHT) |
 | `/curriculum <topic> <points-json>` | (v2.7) Dựng giáo trình (điểm học + `teachable`) | `topics/<topic>/curriculum.md` (transaction-FULL) |
 | `/curriculum --check <topic>` | (v2.7) Kiểm giáo trình, báo cáo PASS/FAIL | chỉ đọc |
+| `/blueprint <topic> <areas-json>` | (v2.8) Dựng khung bắt buộc (Topic_Blueprint, draft); `--edit`/`--approve`/`--amend --confirm` | `topics/<topic>/blueprint.md` (transaction-FULL) |
 | `/next-lesson <topic>` | (v2.7) Sinh lesson kế cho `current_point` (nhảy bài) | `lessons/lesson-NNN` + `topic_state.lessons[]` + `curriculum.md` (transaction-FULL) |
 | `/grade <topic> <submission> <file> <target> <verdict>` | (v2.7) Ghi bản ghi chấm bài thực hành (bài nộp ở `exam/` ngoài vault) | `topics/<topic>/exam_results.md` (transaction-LIGHT) |
 | `/test [lesson]` | Chạy cổng "đã hiểu" (learned_gate) cho lesson | `lesson_state.md` (transaction) |

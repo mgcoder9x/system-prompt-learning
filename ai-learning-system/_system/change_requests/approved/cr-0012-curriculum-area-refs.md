@@ -3,9 +3,9 @@
 ```yaml
 id: cr-0012
 title: "Thêm field CurriculumPoint.area_refs (ánh xạ điểm học → Mandatory_Area) — Coverage_Map"
-status: pending
+status: approved
 date_opened: 2026-07-07
-date_decided: null
+date_decided: 2026-07-07
 version_bump: null   # additive optional field, default []; schema_version curriculum giữ = 1
 related: [spec mandatory-curriculum-framework R3/R5, CR-0011 (blueprint schema), CR-0007 (curriculum schema gốc)]
 recommendation: "THÊM area_refs: list[str] = [] vào CurriculumPoint (tương thích ngược tuyệt đối)"

@@ -29,7 +29,7 @@ lưu-trên-file, portable. Dữ liệu người học ở `learning_vault/`; cô
    .venv\Scripts\python validator\session.py resume  --system . --vault ..\learning_vault
    ```
 6. **Chỉ khi ĐỔI/AUDIT hệ thống** (không cần cho việc dạy thường): tham chiếu spec gốc
-   `../PROMPT_LEARNING_SYSTEM.md` (v2.7) — xem "Đơn vị portable" bên dưới.
+   `../PROMPT_LEARNING_SYSTEM.md` (v2.8) — xem "Đơn vị portable" bên dưới.
 
 ## Luật bất khả xâm phạm (tối thiểu — chi tiết ở `_system/prompts/system_prompt.md`)
 
