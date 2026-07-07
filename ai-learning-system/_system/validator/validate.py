@@ -480,6 +480,76 @@ def _check_curriculum(topic_dir: Path, vault_root: Path, rep: Report, all_lesson
                         f"Curriculum_Point {p.id!r}: source_ref {ref!r} không trỏ file tồn tại")
 
 
+def _check_blueprint(topic_dir: Path, vault_root: Path, rep: Report):
+    """Blueprint_Validator (CR-0011, Task 3/4) — ràng buộc NGỮ NGHĨA của blueprint.md mà model KHÔNG bắt.
+    Model (M.Blueprint) đã lo cấu trúc (id pattern ^ma-*, order>=1, status Literal, mandatory bool,
+    updated>=created) → E-SCHEMA. Đây kiểm (mỗi loại một mã phân biệt, R6.1):
+      - id trùng giữa area                       → E-BP-DUP-ID
+      - order không phải hoán vị 1..N            → E-BP-ORDER
+      - title rỗng sau strip                     → E-BP-EMPTY-TITLE
+      - source_refs blueprint trỏ file thiếu     → E-BP-REF-BROKEN
+      - curriculum point.area_refs trỏ area lạ   → E-BP-AREA-REF-BROKEN (INV-03, áp cả draft)
+    Khi status == 'approved' (QĐ-2), thêm kiểm PHỦ với curriculum:
+      - area mandatory chưa được point nào phủ   → E-BP-AREA-UNCOVERED
+      - point không ánh xạ area nào              → E-BP-POINT-OUTSIDE
+    blueprint là TÙY CHỌN: không có file → không kiểm (backward-compat, P9). 'Đủ tầm chuyên gia / nội dung
+    đúng-sâu' KHÔNG kiểm (Class D, R3.7)."""
+    bpath = topic_dir / "blueprint.md"
+    if not bpath.is_file():
+        return
+    _, bp = _parse_state_model(bpath, vault_root, rep)  # sai cấu trúc → E-SCHEMA (đã phát); abspath → E-PORT-ABSPATH
+    if bp is None:
+        return
+    rel = bpath.relative_to(vault_root)
+    areas = bp.areas
+    area_ids = [a.id for a in areas]
+    # E-BP-DUP-ID: id area duy nhất trong phạm vi blueprint
+    for d in sorted({i for i in area_ids if area_ids.count(i) > 1}):
+        rep.err("E-BP-DUP-ID", rel, f"Mandatory_Area id trùng: {d!r}")
+    # E-BP-ORDER: order phải là hoán vị liên tục 1..N (không trùng, không hở)
+    if sorted(a.order for a in areas) != list(range(1, len(areas) + 1)):
+        rep.err("E-BP-ORDER", rel,
+                f"order phải là hoán vị 1..{len(areas)} (không trùng/không hở), gặp {sorted(a.order for a in areas)}")
+    # E-BP-EMPTY-TITLE: title không rỗng
+    for a in areas:
+        if not (a.title or "").strip():
+            rep.err("E-BP-EMPTY-TITLE", rel, f"Mandatory_Area {a.id!r} có title rỗng")
+    # E-BP-REF-BROKEN: mỗi source_ref blueprint phải trỏ file TỒN TẠI (tương đối topic_dir; lát cắt reference/)
+    for a in areas:
+        for ref in a.source_refs:
+            if not (topic_dir / ref).is_file():
+                rep.err("E-BP-REF-BROKEN", rel,
+                        f"Mandatory_Area {a.id!r}: source_ref {ref!r} không trỏ file tồn tại")
+    # Quan hệ với curriculum (đọc curriculum.md nếu có; lỗi cấu trúc của nó do _check_curriculum lo → nuốt ở đây)
+    cpath = topic_dir / "curriculum.md"
+    cur = None
+    if cpath.is_file():
+        _, cur = _parse_state_model(cpath, vault_root, Report())
+    area_id_set = set(area_ids)
+    if cur is not None:
+        # E-BP-AREA-REF-BROKEN: mọi area_refs của point phải trỏ area TỒN TẠI trong blueprint (INV-03, cả draft)
+        for p in cur.points:
+            for aref in p.area_refs:
+                if aref not in area_id_set:
+                    rep.err("E-BP-AREA-REF-BROKEN", rel,
+                            f"Curriculum_Point {p.id!r}: area_ref {aref!r} không trỏ Mandatory_Area tồn tại (INV-03)")
+    # Kiểm PHỦ chỉ khi blueprint đã 'approved' (QĐ-2 / R5.4 backward-compat)
+    if bp.status == "approved":
+        covered: set = set()
+        if cur is not None:
+            for p in cur.points:
+                covered |= set(p.area_refs)
+                # E-BP-POINT-OUTSIDE: khi approved, mọi point phải ánh xạ >=1 area
+                if not p.area_refs:
+                    rep.err("E-BP-POINT-OUTSIDE", rel,
+                            f"Curriculum_Point {p.id!r} không ánh xạ Mandatory_Area nào (blueprint approved)")
+        # E-BP-AREA-UNCOVERED: mỗi area mandatory phải được >=1 point phủ
+        for a in areas:
+            if a.mandatory and a.id not in covered:
+                rep.err("E-BP-AREA-UNCOVERED", rel,
+                        f"Mandatory_Area {a.id!r} (bắt buộc) chưa được Curriculum_Point nào phủ")
+
+
 def _check_exam_results(topic_dir: Path, vault_root: Path, rep: Report, real_vault_root: Path | None = None):
     """Exam ref-integrity (Class A — E-EXAM-REF-BROKEN). exam_results.md (bản ghi CHẤM, metadata, TRONG
     vault) phải trỏ: (1) `ref` = bài nộp TỒN TẠI trong exam/ NGOÀI vault (đường dẫn tương đối, phải dùng
@@ -577,6 +647,7 @@ def _validate_topic(topic_dir: Path, vault_root: Path, vault_state, cfg: dict,
         _check_index(topic_state, folder_ids, lesson_models, vault_state, ts_rel, rep)  # INV-25
         _check_views(topic_state, [L for L, _ in lesson_models], ts_rel, rep)           # INV-09
     _check_curriculum(topic_dir, vault_root, rep, all_lesson_ids)  # Task 3: E-CURR-* (curriculum.md tùy chọn)
+    _check_blueprint(topic_dir, vault_root, rep)  # CR-0011: E-BP-* (blueprint.md tùy chọn; phủ approved-gated)
     _check_exam_results(topic_dir, vault_root, rep, real_vault_root)  # Task 8.1/DEC-073: E-EXAM-REF-BROKEN (exam_results.md tùy chọn)
 
 

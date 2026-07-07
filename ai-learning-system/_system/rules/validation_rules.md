@@ -75,6 +75,17 @@ có output validator thật.
 | `E-CURR-REF-BROKEN` | `Curriculum_Point.source_refs` trỏ file `reference/` không tồn tại |
 | `E-EXAM-REF-BROKEN` | Bản ghi chấm `exam_results.md` trỏ bài nộp (`ref`) hoặc `target` (topic/Curriculum_Point) không tồn tại |
 
+## Blueprint / khung bắt buộc (FULL — tính năng mandatory-curriculum-framework, CR-0011)
+| Mã | Ý nghĩa |
+|----|---------|
+| `E-BP-DUP-ID` | Hai `Mandatory_Area` trùng `id` trong `blueprint.md` (ngữ nghĩa, model không bắt) |
+| `E-BP-ORDER` | `order` các area không phải hoán vị liên tục 1..N (trùng/hở) |
+| `E-BP-EMPTY-TITLE` | `Mandatory_Area.title` rỗng (chỉ khoảng trắng) |
+| `E-BP-REF-BROKEN` | `Mandatory_Area.source_refs` trỏ file `reference/` không tồn tại |
+| `E-BP-AREA-REF-BROKEN` | `Curriculum_Point.area_refs` trỏ `Mandatory_Area` không tồn tại (INV-03; áp cả draft) |
+| `E-BP-AREA-UNCOVERED` | (blueprint `approved`) `Mandatory_Area` bắt buộc chưa được `Curriculum_Point` nào phủ |
+| `E-BP-POINT-OUTSIDE` | (blueprint `approved`) `Curriculum_Point` không ánh xạ `Mandatory_Area` nào |
+
 ## Transaction (ghi an toàn, spec 10.3/10.3a)
 | Mã | Ý nghĩa |
 |----|---------|
@@ -134,6 +145,13 @@ error_codes:
   - E-CURR-LESSON-LINK
   - E-CURR-REF-BROKEN
   - E-EXAM-REF-BROKEN
+  - E-BP-DUP-ID
+  - E-BP-ORDER
+  - E-BP-EMPTY-TITLE
+  - E-BP-REF-BROKEN
+  - E-BP-AREA-REF-BROKEN
+  - E-BP-AREA-UNCOVERED
+  - E-BP-POINT-OUTSIDE
   - E-STALE-CONTEXT
   - E-CONCURRENT-EDIT
   - E-TX-PARTIAL
