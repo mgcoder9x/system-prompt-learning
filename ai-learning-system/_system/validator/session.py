@@ -760,9 +760,12 @@ def cmd_curriculum(vault: Path, system: Path, topic_id: str, points_json: str, a
         srefs = p.get("source_refs") or []
         if not isinstance(srefs, list) or not all(isinstance(s, str) for s in srefs):
             raise SessionError(f"điểm #{i} 'source_refs' phải là list chuỗi")
+        arefs = p.get("area_refs") or []  # CR-0012: ánh xạ Mandatory_Area (phủ blueprint); default []
+        if not isinstance(arefs, list) or not all(isinstance(s, str) for s in arefs):
+            raise SessionError(f"điểm #{i} 'area_refs' phải là list chuỗi")
         points.append({
             "id": f"cp-{i:03d}", "order": i, "objective": str(p["objective"]),
-            "status": "not_started", "lesson_id": None, "source_refs": srefs,
+            "status": "not_started", "lesson_id": None, "source_refs": srefs, "area_refs": arefs,
         })
     vs_raw = _load_vault_state(vault)[0]
     today = at.astimezone(FA._parse_offset(vs_raw.get("utc_offset", "+00:00"))).date()
@@ -806,6 +809,9 @@ def cmd_curriculum_insert(vault: Path, system: Path, topic_id: str, insert_at: i
     srefs = p.get("source_refs") or []
     if not isinstance(srefs, list) or not all(isinstance(s, str) for s in srefs):
         raise SessionError("--point 'source_refs' phải là list chuỗi")
+    arefs = p.get("area_refs") or []  # CR-0012: ánh xạ Mandatory_Area
+    if not isinstance(arefs, list) or not all(isinstance(s, str) for s in arefs):
+        raise SessionError("--point 'area_refs' phải là list chuỗi")
 
     cur_raw, cur_body = _load_curriculum_validated(cpath)  # sửa-tay-hỏng → E-SCHEMA sạch (không crash)
     points = cur_raw.get("points") or []
@@ -826,7 +832,7 @@ def cmd_curriculum_insert(vault: Path, system: Path, topic_id: str, insert_at: i
         if int(pt.get("order", 0)) >= insert_at:
             pt["order"] = int(pt["order"]) + 1
     new_point = {"id": new_id, "order": insert_at, "objective": str(p["objective"]),
-                 "status": "not_started", "lesson_id": None, "source_refs": srefs}
+                 "status": "not_started", "lesson_id": None, "source_refs": srefs, "area_refs": arefs}
     points.insert(insert_at - 1, new_point)   # vị trí list gọn gàng (validator sắp theo order dù sao)
     cur_raw["points"] = points
     today = at.astimezone(FA._parse_offset(_load_vault_state(vault)[0].get("utc_offset", "+00:00"))).date()
