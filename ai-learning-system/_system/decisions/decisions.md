@@ -2583,3 +2583,31 @@ reversible: >
   test + revert doc (commands.md/HUONG_DAN.md/spec §3.6+§11A/changelog) + move cr-0015 approved→rejected. Field
   area_refs GIỮ (CR-0012 độc lập). Backward-compat tuyệt đối: mọi luồng /curriculum cũ không đổi.
 ```
+
+
+## DEC-077 — Hardening HANDOFF_TEST cho vòng khung bắt buộc v2.8 (A3 blueprint + retrofit) — để AI KHÁC xác minh đầy đủ
+
+```yaml
+id: DEC-077
+type: decision
+date: 2026-07-08
+title: "Mở rộng HANDOFF_TEST.md: thêm Phần A3 (blueprint draft → /curriculum --set-area-refs retrofit → --approve, CHỨNG MINH ngõ cụt NOTE-039 giải) + rubric R4c + /blueprint vào khối commands máy-đọc + drift-guard test_handoff_covers_blueprint_cycle. Để một AI KHÁC (cross-AI) xác minh ĐẦY ĐỦ hệ hiện tại (v2.8), không chỉ v2.7 (A2)"
+spec_ref: "DEC-070 (tiền lệ hardening HANDOFF thêm A2 v2.7); DEC-074/075/076 (blueprint + retrofit); NOTE-035/036 (cross-AI handoff đã đạt); yêu cầu owner 'cần 1 AI khác xác định'"
+summary: >
+  HANDOFF_TEST.md (prompt tự-chứa cho AI KHÁC tiếp quản + chấm rubric) trước chỉ phủ A1 (lõi) + A2 (giáo
+  trình v2.7). Blueprint (v2.8) + retrofit (CR-0015/DEC-076) KHÔNG có trong bài → AI khác chạy sẽ 'ĐẠT
+  handoff' mà KHÔNG kiểm phần mới (đúng lớp lỗ hổng DEC-073: nghiệm thu bỏ sót tầng chưa phủ). Mở rộng:
+  thêm A3 (dựng blueprint draft → retrofit area_refs cho các điểm curriculum đã có → approve; nếu chưa phủ
+  đủ → E-BP-AREA-UNCOVERED/POINT-OUTSIDE, đúng cổng phủ) — CHÍNH kịch bản curriculum-first→áp-khung giải
+  NOTE-039. Cập nhật đồng bộ: R4c (rubric), khối commands máy-đọc (+/blueprint), self-report (+dòng A3),
+  tiêu chí/kết luận Phần A (validate PASS bước 10 VÀ 14; R1–R4c).
+key_decisions:
+  - "Thuần TÀI LIỆU + 1 drift-guard (test_handoff_covers_blueprint_cycle: /blueprint ∈ khối handoff) — KHÔNG cần CR (tiền lệ DEC-070; HANDOFF_TEST là artifact test, không phải registry/schema/spec)."
+  - "A3 dùng đúng luồng blueprint-first-KHÔNG-được (curriculum có trước) → retrofit → approve, để cross-AI kiểm CHÍNH năng lực mới DEC-076 (không phải happy-path blueprint-first)."
+  - "drift-guard đảm bảo: /blueprint (dùng trong A3) phải TỒN TẠI trong commands.md → chống handoff nhắc lệnh bịa (NOTE-031)."
+verified: true
+method: ran-test
+tests: "RED-first: test_handoff_covers_blueprint_cycle FAIL (khối handoff thiếu /blueprint) → thêm /blueprint + A3 → GREEN. Full suite 513→514 passed (+1 drift-guard); validate --scope full PASS. Cross-AI test THẬT vẫn chờ owner chạy AI khác (ranh giới trung thực — tôi KHÔNG tự chấm thay AI độc lập)."
+status: active
+reversible: "Revert A3/R4c/self-report/commands trong HANDOFF_TEST.md + gỡ test_handoff_covers_blueprint_cycle. Không đụng code hệ."
+```

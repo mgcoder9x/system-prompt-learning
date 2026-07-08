@@ -39,3 +39,10 @@ def test_handoff_covers_curriculum_cycle():
     cmds = set(_handoff_commands())
     need = {"/learn", "/validate", "/collect", "/curriculum", "/next-lesson", "/grade"}
     assert need <= cmds, f"HANDOFF_TEST thiếu lệnh vòng giáo trình v2.7: {sorted(need - cmds)}"
+
+
+def test_handoff_covers_blueprint_cycle():
+    """Handoff phải nghiệm thu cả vòng khung bắt buộc v2.8 (blueprint + retrofit — DEC-076/CR-0015),
+    không chỉ v2.7 (nếu không, AI khác 'ĐẠT handoff' mà blueprint chưa được kiểm — lỗ hổng lớp DEC-073)."""
+    cmds = set(_handoff_commands())
+    assert "/blueprint" in cmds, "HANDOFF_TEST thiếu /blueprint (vòng khung bắt buộc v2.8 chưa được nghiệm thu)"
