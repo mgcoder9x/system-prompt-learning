@@ -38,6 +38,7 @@ học tuần tự) rồi sinh nhiều bài bám theo. Vòng này KHÔNG bắt bu
 | Dựng khung bắt buộc | "lập khung Docker" hoặc `/blueprint` | Tạo `blueprint.md` — **các mảng BẮT BUỘC** (zero→chuyên-gia), trạng thái `draft`; duyệt (`--approve`) → thành chuẩn ràng buộc mà giáo trình phải phủ đủ |
 | Dựng giáo trình | "lập giáo trình Docker" hoặc `/curriculum` | Tạo `curriculum.md` — các **điểm cần học** theo thứ tự; chỉ "được-phép-dạy" khi giáo trình hợp lệ (và phủ đủ khung nếu khung đã duyệt) |
 | Chèn điểm giữa chừng | "thêm một điểm học vào giữa" hoặc `/curriculum --insert-at` | Chèn điểm mới vào vị trí bạn muốn, giữ nguyên các điểm cũ + tiến độ đã học (R8) |
+| Gắn khung cho giáo trình đã có | "gắn điểm này vào mảng ..." hoặc `/curriculum --set-area-refs` | Gắn/sửa ánh xạ phủ (điểm học ↔ mảng bắt buộc) cho điểm ĐÃ CÓ — dùng khi bạn đã lập giáo trình TRƯỚC rồi mới muốn áp khung; làm dưới khung `draft` từng điểm rồi `--approve` (CR-0015) |
 | Kiểm giáo trình | `/curriculum --check` | Báo cáo giáo trình PASS/FAIL (chỉ đọc, không đổi gì) |
 | Học bài kế | "bài tiếp theo" hoặc `/next-lesson` | Sinh bài mới cho **điểm đang học**; học xong (`/done`) đạt cổng hiểu → giáo trình **tự tiến** sang điểm kế |
 | Chấm bài thực hành | `/grade` | Ghi kết quả chấm cho bài bạn nộp ở thư mục `exam/` (bài nộp có thể là **code**) |

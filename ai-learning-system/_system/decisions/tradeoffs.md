@@ -262,7 +262,8 @@ evidence:
   - "read-source: KHÔNG có backend nào set area_refs trên point đã có (grep cmd_* — chỉ cmd_curriculum/cmd_curriculum_insert đọc area_refs từ JSON đầu vào)"
   - "cross-ref: NOTE-039 (phát hiện + root-cause đầy đủ); DEC-075 (phủ là cổng teachable)"
 verified: true
-method: read-source
-status: open-question
-reversible: "n/a (chưa triển khai gì; chỉ ghi nhận trade-off + chờ owner quyết B)"
+method: ran-test
+status: active
+owner_decision: "2026-07-08: owner CHỌN B ('Có') → xây lệnh retrofit. Đã hiện thực qua CR-0015/DEC-076 (chế độ cờ /curriculum --set-area-refs, transaction-FULL, RED-first 7 unit + 1 E2E chứng minh NOTE-039 giải; 513 passed). open-question ĐÓNG."
+reversible: "Đảo = gỡ CR-0015/DEC-076 (xem reversible ở DEC-076); quay về phương án A (chỉ blueprint-first)."
 ```

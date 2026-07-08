@@ -14,7 +14,7 @@ Lệnh có `backend` là **lệnh shell chạy được** (spec 10.5); test `pha
 | `/ask <câu hỏi>` | Hỏi phụ trong lesson hiện tại | `lesson.md ## Hỏi phụ` |
 | `/source <link\|text>` | Nạp tài liệu | `sources.md` status=raw |
 | `/collect <topic> <slug> <nội dung>` | Ghi lát cắt tài liệu tham chiếu (dựng giáo trình) | `topics/<topic>/reference/<slug>.md` (transaction-LIGHT) |
-| `/curriculum <topic> <points-json>` | Dựng giáo trình (điểm học + `teachable`); chế độ `--insert-at <pos> --point <json>` chèn điểm giữa chừng (R8) | `topics/<topic>/curriculum.md` (transaction-FULL) |
+| `/curriculum <topic> <points-json>` | Dựng giáo trình (điểm học + `teachable`); chế độ `--insert-at <pos> --point <json>` chèn điểm giữa chừng (R8); chế độ `--set-area-refs <cp-id> --area-refs <json>` gắn/sửa ánh xạ phủ khung cho điểm đã có (retrofit, CR-0015) | `topics/<topic>/curriculum.md` (transaction-FULL) |
 | `/blueprint <topic> <areas-json>` | Dựng khung bắt buộc (Topic_Blueprint, status=draft); chế độ `--edit` (sửa draft), `--approve` (draft→approved), `--amend --confirm` (sửa approved) | `topics/<topic>/blueprint.md` (transaction-FULL) |
 | `/next-lesson <topic>` | Sinh lesson kế cho `current_point` (nhảy bài) | `lessons/lesson-NNN` + `topic_state.lessons[]` + `curriculum` (transaction-FULL) |
 | `/grade <topic> <submission> <file> <target> <verdict>` | Ghi bản ghi chấm bài thực hành (bài nộp ở `exam/` NGOÀI vault) | `topics/<topic>/exam_results.md` (transaction-LIGHT) |

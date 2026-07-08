@@ -842,6 +842,44 @@ def cmd_curriculum_insert(vault: Path, system: Path, topic_id: str, insert_at: i
     return _run_tx(vault, system, writes, now=at)  # FULL: E-CURR-* (order hoán vị/dup-id/ref) gate; sai → rollback
 
 
+def cmd_curriculum_set_area_refs(vault: Path, system: Path, topic_id: str,
+                                 point_id: str, area_refs_json: str, at: datetime):
+    """Gắn/sửa area_refs cho một Curriculum_Point ĐÃ CÓ (CR-0015 — retrofit, mở luồng curriculum-first→áp-khung).
+
+    Ngữ nghĩa REPLACE: đặt lại TOÀN BỘ area_refs của point `point_id` bằng danh sách mới (list RỖNG = xoá ánh
+    xạ) — tất định, idempotent, cho phép sửa/xoá (khác append). transaction-FULL: validator gate E-CURR-* +
+    E-BP-* (E-BP-AREA-REF-BROKEN áp cả draft; coverage AREA-UNCOVERED/POINT-OUTSIDE chỉ ép khi blueprint
+    approved VÀ curriculum.teachable — DEC-075) TRƯỚC commit; sai → rollback (curriculum KHÔNG đổi). Retrofit
+    chạy DƯỚI blueprint draft (cổng phủ tắt) từng điểm một, rồi /blueprint --approve sau (NOTE-039/TRD-008 B).
+    point_id không tồn tại / curriculum thiếu / JSON sai → SessionError, KHÔNG ghi bộ phận. curriculum.md
+    sửa-tay-hỏng → E-SCHEMA sạch (không crash — DEC-071 qua _load_curriculum_validated)."""
+    vault, system = Path(vault), Path(system)
+    _recover_first(vault)
+    if not topic_id.strip() or "/" in topic_id:
+        raise SessionError(f"topic_id không hợp lệ: {topic_id!r}")
+    cpath = vault / "topics" / topic_id / "curriculum.md"
+    if not cpath.is_file():
+        raise SessionError(f"topic {topic_id!r} chưa có curriculum — dùng /curriculum dựng trước (CR-0015 sửa giáo trình đang có)")
+    try:
+        arefs = json.loads(area_refs_json)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise SessionError(f"--area-refs không phải JSON hợp lệ: {e}")
+    if not isinstance(arefs, list) or not all(isinstance(s, str) for s in arefs):
+        raise SessionError("--area-refs phải là JSON list chuỗi (id Mandatory_Area), vd [\"ma-001\"]")
+
+    cur_raw, cur_body = _load_curriculum_validated(cpath)  # sửa-tay-hỏng → E-SCHEMA sạch (không crash)
+    points = cur_raw.get("points") or []
+    target = next((p for p in points if str(p.get("id")) == point_id), None)
+    if target is None:
+        raise SessionError(f"point {point_id!r} không tồn tại trong curriculum topic {topic_id!r}")
+    target["area_refs"] = list(arefs)   # REPLACE (không append) — tất định, cho phép sửa/xoá
+    today = at.astimezone(FA._parse_offset(_load_vault_state(vault)[0].get("utc_offset", "+00:00"))).date()
+    cur_raw["updated"] = today
+    writes = [TX.Write(cpath.relative_to(vault).as_posix(), _dump_state(cur_raw, cur_body),
+                       expected_read_hash=VIO.content_hash(cpath))]
+    return _run_tx(vault, system, writes, now=at)  # FULL: E-CURR-* + E-BP-* gate (coverage nếu approved+teachable); sai → rollback
+
+
 # ---- blueprint (Topic_Blueprint — khung giáo trình bắt buộc, CR-0011/0013) ----
 def _load_blueprint_validated(bpath: Path) -> tuple[dict, str]:
     """blueprint.md validate qua M.Blueprint (xem _load_model_validated) — sửa-tay-hỏng → E-SCHEMA sạch."""
@@ -1333,6 +1371,10 @@ def _build_parser() -> argparse.ArgumentParser:
                             help="(CHÈN R8) vị trí 1..N+1 chèn điểm mới")
             sp.add_argument("--point", default=None,
                             help='(CHÈN R8) JSON một điểm: {"objective": "...", "source_refs": [...]}')
+            sp.add_argument("--set-area-refs", dest="set_area_refs", default=None,
+                            help="(RETROFIT CR-0015) cp-id của điểm cần gắn/sửa area_refs")
+            sp.add_argument("--area-refs", dest="area_refs", default=None,
+                            help='(RETROFIT CR-0015) JSON list id Mandatory_Area, vd ["ma-001"]')
         elif name == "blueprint":
             sp.add_argument("--topic", required=True, help="topic_id dựng/sửa khung bắt buộc")
             sp.add_argument("--areas", default=None,
@@ -1446,7 +1488,12 @@ def main(argv=None) -> int:
             committed, rep, _ref = cmd_collect(Path(args.vault), Path(args.system),
                                                args.topic, args.slug, args.content, at)
         elif args.command == "curriculum":
-            if args.insert_at is not None:   # CR-0010 R8: chế độ CHÈN điểm giữa chừng
+            if args.set_area_refs is not None:   # CR-0015: retrofit area_refs cho point đã có
+                if args.area_refs is None:
+                    raise SessionError("chế độ --set-area-refs cần --area-refs (JSON list id mảng)")
+                committed, rep = cmd_curriculum_set_area_refs(Path(args.vault), Path(args.system),
+                                                              args.topic, args.set_area_refs, args.area_refs, at)
+            elif args.insert_at is not None:   # CR-0010 R8: chế độ CHÈN điểm giữa chừng
                 if not args.point:
                     raise SessionError("chế độ --insert-at cần --point (JSON một điểm)")
                 committed, rep = cmd_curriculum_insert(Path(args.vault), Path(args.system),

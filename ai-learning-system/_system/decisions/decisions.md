@@ -2539,3 +2539,47 @@ evidence:
 verified: true
 method: ran-test
 ```
+
+
+## DEC-076 — CR-0015 approved+áp: /curriculum --set-area-refs (retrofit area_refs) — giải ngõ cụt NOTE-039
+
+```yaml
+id: DEC-076
+type: decision
+date: 2026-07-08
+title: "Thêm chế độ cờ /curriculum --set-area-refs <cp-id> --area-refs <json>: gắn/sửa area_refs cho Curriculum_Point ĐÃ CÓ (retrofit) — mở luồng curriculum-first→áp-khung, giải ngõ cụt NOTE-039. Phương án B của TRD-008 (owner duyệt). SPEC-first (CR-0015 design→valid→approve) rồi RED-first"
+spec_ref: "CR-0015 approved; NOTE-039 (ngõ cụt); TRD-008 (owner chọn B); DEC-069 (tiền lệ chế độ cờ --insert-at), DEC-075 (phủ là cổng teachable), DEC-071 (_load_curriculum_validated→E-SCHEMA sạch), CR-0012 (area_refs schema)"
+summary: >
+  Owner duyệt phương án B (TRD-008): bổ sung năng lực gắn/sửa area_refs cho điểm học ĐÃ CÓ (trước KHÔNG có —
+  cmd_curriculum từ chối nếu tồn tại; insert chỉ thêm point mới). Backend cmd_curriculum_set_area_refs: tìm
+  point theo id → REPLACE area_refs → transaction-FULL (gate E-CURR-* + E-BP-*). Chế độ CỜ
+  /curriculum --set-area-refs <cp-id> --area-refs <json> — KHÔNG thêm tên lệnh (drift-guard bất biến, tiền lệ
+  DEC-069). GIẢI ngõ cụt NOTE-039: retrofit chạy DƯỚI blueprint draft (cổng phủ TẮT — DEC-075) từng điểm một,
+  rồi /blueprint --approve → phủ đủ → approved. Luồng curriculum-first→áp-khung nay thông suốt.
+key_decisions:
+  - "Bề mặt: chế độ CỜ, KHÔNG tên lệnh mới → drift-guard registry/router/huong_dan bất biến (DEC-069)."
+  - "Ngữ nghĩa REPLACE (đặt lại cả list; [] = xoá ánh xạ) KHÔNG append — tất định, idempotent, cho phép sửa/xoá."
+  - "transaction-FULL (không LIGHT): area_refs tác động E-BP-AREA-REF-BROKEN + coverage → phải qua _check_blueprint (full-validate). LIGHT sẽ không gate được."
+  - "KHÔNG đổi schema (area_refs có sẵn CR-0012), KHÔNG mã lỗi mới, KHÔNG bump _system/VERSION (=1)."
+  - "point không tồn tại / curriculum thiếu / JSON sai (không list / phần tử non-str) → SessionError, KHÔNG ghi bộ phận; curriculum.md sửa-tay-hỏng → E-SCHEMA sạch (DEC-071)."
+edge_declared: >
+  Nếu blueprint ĐÃ approved + curriculum teachable + chưa phủ (CHỈ tới được bằng sửa-tay file, vì approve qua
+  lệnh đã đòi phủ đủ) → validate FULL đang FAIL → mọi transaction (kể cả set-area-refs) ABORT tới khi phủ đủ.
+  Cách đúng: retrofit dưới blueprint DRAFT (luồng chuẩn); trạng thái sửa-tay-hỏng thì đưa blueprint về draft
+  trước rồi retrofit. KHÔNG phải bug (validator giữ đúng bất biến).
+verified: true
+method: ran-test
+tests: >
+  RED-first 7 unit (validator/tests/phase10/test_session_curriculum_setarearefs.py: updates_point /
+  replace_not_append / empty_clears / unknown_point / bad_json / no_curriculum / corrupt→E-SCHEMA) —
+  xác nhận RED (AttributeError) trước, GREEN sau hiện thực. + 1 E2E
+  (validator/tests/phase12/test_e2e_retrofit_blueprint.py): curriculum-first teachable KHÔNG area_refs →
+  blueprint draft → approve FAIL (E-BP-POINT-OUTSIDE/AREA-UNCOVERED) → 2× set-area-refs → approve PASS →
+  validate --scope full PASS → next-lesson PASS. CHỨNG MINH ngõ cụt NOTE-039 được giải.
+  505→513 passed (+8); validate --scope full pass:true; selfcheck NGUYÊN VẸN.
+status: active
+reversible: >
+  Gỡ backend cmd_curriculum_set_area_refs + 2 cờ parser (--set-area-refs/--area-refs) + nhánh dispatch + 2 file
+  test + revert doc (commands.md/HUONG_DAN.md/spec §3.6+§11A/changelog) + move cr-0015 approved→rejected. Field
+  area_refs GIỮ (CR-0012 độc lập). Backward-compat tuyệt đối: mọi luồng /curriculum cũ không đổi.
+```

@@ -226,7 +226,7 @@ Trên tầng giáo trình, một topic có thể có **khung bắt buộc (Topic
 - `areas[]`: mỗi mảng có `id` (`ma-NNN`), `order` (hoán vị 1..N), `title` (không rỗng), `mandatory` (bool bắt-buộc/tùy-chọn), `source_refs[]` (trỏ file trong `reference/`).
 - `status`: vòng đời `{draft, approved}` — `draft` sửa tự do; `approved` là chuẩn ràng buộc, chỉ sửa qua bước có xác nhận tường minh (`--amend --confirm`).
 
-**Coverage_Map — ánh xạ phủ:** đặt ở phía curriculum, qua `CurriculumPoint.area_refs[]` (id các Mandatory_Area mà point phủ). Đặt ở curriculum (bên sửa được) chứ không phải blueprint (bên khóa khi approved) để tránh xung đột khóa. Mỗi `area_refs[i]` phải trỏ mảng tồn tại (INV-03).
+**Coverage_Map — ánh xạ phủ:** đặt ở phía curriculum, qua `CurriculumPoint.area_refs[]` (id các Mandatory_Area mà point phủ). Đặt ở curriculum (bên sửa được) chứ không phải blueprint (bên khóa khi approved) để tránh xung đột khóa. Mỗi `area_refs[i]` phải trỏ mảng tồn tại (INV-03). `area_refs` được nhập lúc dựng/chèn điểm; hoặc gắn/sửa cho điểm ĐÃ CÓ qua chế độ `/curriculum --set-area-refs <cp-id> --area-refs <json>` (retrofit — cho luồng dựng-giáo-trình-trước rồi áp-khung-sau: làm dưới khung `draft` từng điểm, rồi `--approve`).
 
 **Phủ là CỔNG của `teachable`, KHÔNG phải bất biến vault độc lập:** kiểm phủ chỉ ép khi blueprint đã `approved` VÀ `curriculum.teachable == true` (suy từ "còn mảng bắt buộc chưa phủ → giữ curriculum chưa-teachable"). Do đó: approved-blueprint-chưa-có-curriculum vẫn hợp lệ (không brick vault, không chặn luồng blueprint→approve→dựng-curriculum); topic chưa có blueprint / blueprint còn draft → giữ hành vi curriculum-driven cũ (tương thích ngược).
 
@@ -1005,6 +1005,7 @@ AI:  Đã tạo topic "docker" với 5 lesson: [1] Container là gì → [2] Ima
 | `/collect <topic> <slug> <nội dung>` | (v2.7) Ghi lát cắt tài liệu tham chiếu | `topics/<topic>/reference/<slug>.md` (transaction-LIGHT) |
 | `/curriculum <topic> <points-json>` | (v2.7) Dựng giáo trình (điểm học + `teachable`) | `topics/<topic>/curriculum.md` (transaction-FULL) |
 | `/curriculum --check <topic>` | (v2.7) Kiểm giáo trình, báo cáo PASS/FAIL | chỉ đọc |
+| `/curriculum --set-area-refs <cp-id> --area-refs <json>` | (v2.8) Gắn/sửa `area_refs` (Coverage_Map) cho điểm ĐÃ CÓ — retrofit áp khung cho giáo trình dựng trước | `topics/<topic>/curriculum.md` (transaction-FULL) |
 | `/blueprint <topic> <areas-json>` | (v2.8) Dựng khung bắt buộc (Topic_Blueprint, draft); `--edit`/`--approve`/`--amend --confirm` | `topics/<topic>/blueprint.md` (transaction-FULL) |
 | `/next-lesson <topic>` | (v2.7) Sinh lesson kế cho `current_point` (nhảy bài) | `lessons/lesson-NNN` + `topic_state.lessons[]` + `curriculum.md` (transaction-FULL) |
 | `/grade <topic> <submission> <file> <target> <verdict>` | (v2.7) Ghi bản ghi chấm bài thực hành (bài nộp ở `exam/` ngoài vault) | `topics/<topic>/exam_results.md` (transaction-LIGHT) |

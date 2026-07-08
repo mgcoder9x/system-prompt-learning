@@ -1371,8 +1371,13 @@ evidence:
   - "cross-ref: TRD-008 (quyết định), DEC-075 (cổng teachable)"
 verified: true
 method: read-source
-status: active
-reversible: "n/a (ghi nhận sự thật + luồng đúng; đường retrofit là tính năng tương lai qua CR nếu owner chọn)"
+status: resolved
+resolution: >
+  ĐÃ GIẢI ngày 2026-07-08 (owner chọn phương án B của TRD-008): thêm lệnh retrofit
+  /curriculum --set-area-refs <cp-id> --area-refs <json> (CR-0015/DEC-076) — gắn/sửa area_refs cho điểm ĐÃ CÓ.
+  Luồng curriculum-first→áp-khung nay đi được: retrofit dưới blueprint draft từng điểm → /blueprint --approve.
+  E2E test_e2e_retrofit_blueprint.py chứng minh (513 passed). Ngõ cụt KHÔNG còn.
+reversible: "Đảo = gỡ CR-0015/DEC-076 → quay lại ràng buộc blueprint-first (ghi nhận ở entry này)."
 ```
 
 ---
