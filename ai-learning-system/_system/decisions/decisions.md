@@ -2752,3 +2752,40 @@ method: read-source
 status: active
 reversible: "Chỉ sửa prose SPEC + ghi nhận; chưa code."
 ```
+
+
+## DEC-082 — Phase 1 orchestrator (headless) hiện thực RED-first — sản phẩm ÉP kernel, không đổi kernel
+
+```yaml
+id: DEC-082
+type: decision
+date: 2026-07-09
+title: "Hiện thực product/orchestrator/teaching_session.py (Phase 1 A2) theo SPEC_PHASE1 + DEC-081: TeachingSession author nội-dung-dạy rồi CHỐT qua kernel cmd_done (cổng). RED-first 5 test (R-ORCH-1..4 + tất định) GREEN; kernel suite 520 KHÔNG đổi (product/ tách biệt); KHÔNG đổi kernel"
+spec_ref: "SPEC_PHASE1_ORCHESTRATOR §2/§3/§5; DEC-081 (trust model + R1 giải); DESIGN_A2 (QĐ-2=A2, SD-2 import in-process); test _make_lesson_learned (công thức author đã proven)"
+summary: >
+  Lớp sản phẩm A2 khởi động: product/orchestrator/ (NGOÀI kernel governed tree). TeachingSession(vault,
+  system, llm, at): ask() lấy câu hỏi từ LLM (inject, stub tất định — offline); submit_answer(axis, learner_text,
+  score) — LLM đề xuất evidence quote, orchestrator KIỂM verbatim (C.normalize_for_match — mirror kernel) →
+  không verbatim thì raise EvidenceNotVerbatim (R-ORCH-3, không lưu); finalize(lesson_id) author lesson_state
+  (status=learned+mastery) + lesson.md (Sessions+transcript+evidence) rồi gọi kernel cmd_done → trả
+  (committed AND report.ok(), report). Phán quyết learned DO KERNEL (R-ORCH-1/4).
+key_decisions:
+  - "SD-2 import in-process: import session/canonical từ _system/validator (đúng API 520 test đang gọi). KHÔNG subprocess, KHÔNG JSON round-trip."
+  - "Verbatim check MIRROR kernel (C.normalize_for_match) để fail-sớm; kernel E-ASSESS-FAKEQUOTE là backstop (defense-in-depth) — đã CHỨNG MINH bằng test: nhét quote bịa bỏ-qua-check → cmd_done vẫn chặn."
+  - "Author theo đúng công thức _make_lesson_learned (đã proven PASS) → KHÔNG đổi kernel, KHÔNG cần CR."
+  - "Cách ly: product/tests riêng → kernel suite giữ 520; moat không đụng."
+tests: >
+  RED-first: import orchestrator → ModuleNotFoundError (đỏ) → hiện thực → 5 test GREEN:
+  happy_path_learned_via_kernel (learned=True + status=learned + validate PASS), gate_fail_not_learned
+  (thiếu trục → E-GATE-FAIL, learned=False), reject_non_verbatim_evidence (raise EvidenceNotVerbatim),
+  fakequote_caught_by_kernel_defense_in_depth (bỏ qua check orchestrator → kernel E-ASSESS-FAKEQUOTE),
+  deterministic_offline (2 lần giống hệt). Kernel suite VẪN 520 passed (product/ tách biệt).
+limitations_declared: >
+  Phase 1 headless (không UI — Phase 3); LLM stub (adapter thật — Phase 4); M2 retention chưa (Phase 2);
+  author nội dung dạy NON-transactional (write rồi cmd_done validate — hành vi hệ hiện tại, DEC-081);
+  escape YAML cho quote free-text chưa làm (Phase 1 input sạch; hardening sau). Quote chứa dấu " sẽ cần escape.
+verified: true
+method: ran-test
+status: active
+reversible: "Xoá product/ (orchestrator + tests) — kernel + suite 520 không phụ thuộc. Không đụng kernel/vault thật (test dùng tmp copy)."
+```
