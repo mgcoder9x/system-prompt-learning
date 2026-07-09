@@ -1423,3 +1423,145 @@ method: ran-test
 status: active
 reversible: "n/a (việc môi trường; .venv luôn dựng lại từ requirements.txt)"
 ```
+
+---
+
+## NOTE-041 — Phiên 2026-07-09: môi trường KHÔNG có `.venv` → chưa chạy pytest; verify bằng read-source + inline stdlib
+
+```yaml
+id: NOTE-041
+type: note
+date: 2026-07-09
+title: "Workspace system-prompt-learning (máy k.nguyen.manh.toan) KHÔNG có _system/.venv → CHƯA tái chạy pytest phiên này; ghi rõ mức kiểm chứng + 2 sự thật phụ (arXiv không fetch được, repo_lab không được guard)"
+spec_ref: "n/a (môi trường + tính trung thực kiểm chứng, README rule#2)"
+summary: >
+  Phiên này chỉ làm phân tích (repo tương tự + luận đề sản phẩm) + cập nhật nhật ký; KHÔNG đụng kernel/code.
+  Môi trường workspace hiện tại KHÔNG có _system/.venv (verified). Do đó KHÔNG chạy được full pytest ở đây
+  mà không dựng lại venv (pip --require-hashes). Các entry phiên này verified ở mức read-source + một inline
+  stdlib check mô phỏng 5 kiểm của guard nhật ký (KHÔNG phải chạy chính test qua pytest).
+facts:
+  - "KHÔNG có .venv: file_search '.venv/Scripts/python.exe' (kể cả ignored) → No files found."
+  - "arXiv:2605.11032 (provenance-verified memory transfer) KHÔNG fetch được toàn văn (web_fetch lỗi 2 lần) → similar_systems_landscape.md ghi rõ 'abstract-only, chưa đọc', KHÔNG trích như đã đọc."
+  - "repo_lab/repo_evaluations/ KHÔNG có test guard: grep 'repo_eval|repo_lab' trong **/tests/**/*.py → No matches."
+impact:
+  - "Số test '519 passed' là THEO TRANSCRIPT end.md/phiên trước (máy khác, 'New folder'), CHƯA tái kiểm trên workspace này. AI phiên sau: dựng .venv rồi chạy pytest để nâng transcript→ran-test."
+evidence:
+  - "file_search '.venv/Scripts/python.exe' includeIgnored=yes → No files found"
+  - "web_fetch https://arxiv.org/abs/2605.11032 + /html/ → Error extracting content (x2)"
+  - "grep_search 'repo_eval|repo_lab' includePattern **/tests/**/*.py → No matches found"
+verified: true
+method: ran-test
+status: active
+update_2026_07_09: >
+  ĐÃ ĐÓNG GAP trong CÙNG phiên: dựng _system/.venv (py 3.11.9; pip install --require-hashes -r
+  requirements.txt — 8 gói pinned+hash OK) NGAY trên workspace này rồi chạy THẬT bằng pytest:
+  'pytest validator/tests -q' → 520 passed trong ~166s (519 baseline + test_supersede_pointers_resolve
+  của DEC-080); 'validate.py --system . --vault ..\\learning_vault --level full --scope full --json' →
+  pass:true, errors:[], warnings:[]. Nâng transcript→ran-test TRÊN máy k.nguyen.manh.toan (không chỉ
+  bản 'New folder' của phiên trước). Toàn hệ XANH trên workspace hiện tại.
+todo: "(xong) .venv đã tồn tại; phiên sau chỉ cần chạy lại pytest khi sửa code."
+reversible: "n/a"
+```
+
+---
+
+## NOTE-042 — [open-question] Chống-drift còn hở: guard nhật ký chưa kiểm EVIDENCE-LIVENESS
+
+```yaml
+id: NOTE-042
+type: note
+date: 2026-07-09
+title: "test_decision_journal_consistency kiểm CẤU TRÚC nhưng KHÔNG kiểm evidence còn sống → entry verified:true+ran-test có thể trỏ test đã đổi tên/xoá mà không ai bắt"
+spec_ref: "DEC-078 (guard hiện có); TRD-010 (quyết định hoãn); README decisions/ rule#1"
+summary: >
+  Hở chống-drift GỐC còn lại (phát hiện khi đọc mã guard theo yêu cầu owner 'cách cực mạnh chống drift'):
+  guard đảm bảo index↔md song ánh + id/file/type/field, NHƯNG KHÔNG mở nội dung 'evidence' để kiểm các
+  path/tên-test được trích còn tồn tại. Hệ quả: sau refactor (đổi tên/xoá test, dời file), một entry vẫn
+  khai verified:true + method:ran-test trong khi bằng chứng đã chết → nhật ký 'nói dối' âm thầm, đúng loại
+  drift nguy hiểm nhất cho xương sống chống-drift.
+proposed_deepening: >
+  Mở rộng guard: với mỗi entry method ∈ {ran-test, read-source}, trích các token dạng đường-dẫn/tên-test
+  trong evidence (vd 'validator/...py', 'test_*.py', 'test_*::*') và ASSERT chúng tồn tại trong cây repo.
+  BẮT BUỘC thiết kế chống FALSE-POSITIVE: chỉ nhận token có mẫu rõ (whitelist regex), bỏ qua mô tả tự do;
+  cân nhắc chỉ áp cho entry MỚI (>= một mốc id) để không phải hồi tố 133 entry cũ; teeth-probe: đổi tên 1
+  test được trích → guard PHẢI đỏ.
+why_open (không code ngay): >
+  Theo TRD-010 + nguyên tắc owner (design-first) + R10.1 (tránh ceremony/false-positive). Đây là quyết định
+  MỞ RỘNG phạm vi guard → chờ owner duyệt + thiết kế robust trước khi hiện thực.
+evidence:
+  - "read-source: test_decision_journal_consistency.py — _REQUIRED_FIELDS = {id,type,status,verified,method,title} (KHÔNG có 'evidence'); 5 test đều thao tác trên id/type/file, không mở evidence"
+verified: true
+method: read-source
+status: resolved
+resolved_by: DEC-080
+resolution: >
+  Cùng phiên 2026-07-09: điều tra thực nghiệm (DEC-080) TỪ CHỐI kiểm liveness token evidence — đo được
+  28/149 token ASSERT-FAIL (~19% false-positive) trên entry HỢP LỆ (path một phần / ví dụ minh hoạ /
+  ellipsis) → unsound. Thay bằng deepening SOUND: referential-integrity supersede pointers
+  (test_supersede_pointers_resolve), đã hiện thực + teeth-verified (inject DEC-99999 → đỏ đúng).
+reversible: "n/a (chưa triển khai — nay đã chuyển hướng sang DEC-080)"
+```
+
+---
+
+## NOTE-043 — QĐ-1 (người dùng mục tiêu) ĐÃ CHỐT = A (người học cuối) — owner quyết
+
+```yaml
+id: NOTE-043
+type: note
+date: 2026-07-09
+title: "Owner chốt QĐ-1 = A (end learners) qua user_input → kích hoạt QĐ-2 (giải 'phụ thuộc AI chạy CLI', hướng MCP/service) là nút thắt kế tiếp; cần UI; QĐ-3 (đo Class D) là đầu tư cốt lõi; kernel GIỮ, không rebuild"
+spec_ref: "PRODUCT_THESIS.md §3 QĐ-1; DEC-079 (nơi lưu tài liệu chiến lược)"
+summary: >
+  Sau khi trình bày 3 phương án (A người học cuối / B dev-agent như vestige / C kép) kèm lý do, owner
+  CHỌN A qua công cụ user_input (phiên 2026-07-09). Đây là quyết định GỐC (quyết định mẹ) mà mọi bước
+  sản phẩm sau phụ thuộc. Đã đánh dấu RESOLVED trong PRODUCT_THESIS.md §3.
+implications:
+  - "QĐ-2 thành nút thắt kế tiếp: end-learner KHÔNG kiểm soát AI của họ → KHÔNG được để bảo đảm Class A phụ thuộc 'AI chịu chạy validate.py'. Hướng: bọc kernel bằng MCP server hoặc service có API (bài học vestige: portable-qua-mọi-AI ship bằng MCP)."
+  - "Cần lớp UI cho người dùng cuối (các đối thủ ExamAI/Obsidian-plugins/Telegram-bot đều có; hệ hiện CLI-only)."
+  - "QĐ-3 (biến chất lượng DẠY / Class D từ 'tùy AI' thành ĐO ĐƯỢC) là hạng mục đầu tư giá-trị-cốt-lõi — nơi người học trả tiền."
+  - "KHÔNG rebuild kernel (validator/transaction/governance) — đó là moat; chỉ bọc lớp trên."
+boundary: >
+  Đây là quyết định KINH DOANH của owner, KHÔNG phải AI tự-ra (nên ghi ở notes 'điều nên biết', không ở
+  decisions). AI KHÔNG được tự suy diễn tiếp QĐ-2/QĐ-3 khi chưa có quyết định — sẽ trình phương án + lý do
+  rồi chờ owner chốt từng bước (design-first).
+evidence:
+  - "ran-command: user_input QĐ-1 (2026-07-09) → phản hồi owner = 'A — Người học cuối (end learners)'"
+  - "read-source: PRODUCT_THESIS.md §3 QĐ-1 — đã thêm khối '✅ QĐ-1 ĐÃ CHỐT (2026-07-09): A'"
+verified: true
+method: ran-command
+status: active
+reversible: "Owner đổi quyết định → cập nhật PRODUCT_THESIS §3 + note bổ sung (append-only, không xoá)."
+```
+
+---
+
+## NOTE-044 — QĐ-2 (cơ chế phân phối/đảm bảo) ĐÃ CHỐT = A2 (app local-first nhúng kernel + tự điều phối LLM)
+
+```yaml
+id: NOTE-044
+type: note
+date: 2026-07-09
+title: "Owner chốt QĐ-2 = A2 qua user_input: sản phẩm CHẠY kernel (validator/transaction) như service tin cậy, không phụ thuộc AI người dùng; local-first giữ privacy/markdown; MCP là kênh PHỤ; Cloud SaaS loại. Kernel GIỮ, chỉ bọc UI+orchestrator+LLM-adapter"
+spec_ref: "PRODUCT_THESIS.md §3 QĐ-2; NOTE-043 (QĐ-1=A)"
+summary: >
+  Sau khi trình 3 phương án (A2 local-first app / B2 cloud SaaS / C2 MCP-first) kèm lý do, owner CHỌN A2
+  qua user_input (phiên 2026-07-09). Giải đúng rủi ro gốc của QĐ-2: bảo đảm Class A KHÔNG còn phụ thuộc
+  'AI của người học có chịu chạy validate.py' — vì chính sản phẩm chạy kernel.
+implications:
+  - "Kiến trúc A2 (sẽ design chi tiết SAU khi chốt QĐ-3): UI ↔ orchestrator (điều phối LLM + gọi kernel) ↔ kernel-as-trusted-service (validator/transaction, GIỮ nguyên) ↔ vault markdown. Trust boundary: mọi ghi 'learned' phải qua validate PASS + evidence, do SẢN PHẨM ép, không do LLM tự nhận."
+  - "MCP = kênh PHỤ cho power-user (portable đa-AI), KHÔNG phải sản phẩm chính nhóm A."
+  - "Cloud SaaS bị loại ở bước này (đánh đổi local-first/privacy + hạ tầng)."
+  - "REUSE: toàn bộ kernel (validator/transaction/governance/CLI) KHÔNG đổi. NEW: UI + orchestrator + LLM adapter (bọc ngoài)."
+boundary: >
+  Quyết định KINH DOANH/kiến-trúc-cấp-cao của owner (ghi ở notes). Chi tiết A2 (đóng gói desktop vs
+  local-web, cách nhúng Python kernel, BYO-key LLM, offline posture) là các SUB-QUYẾT-ĐỊNH sẽ trình ở
+  design doc — design-first, chưa code.
+evidence:
+  - "ran-command: user_input QĐ-2 (2026-07-09) → phản hồi owner = 'A2 — App local-first nhúng kernel + tự điều phối LLM'"
+  - "read-source: PRODUCT_THESIS.md §3 QĐ-2 — đã thêm khối '✅ QĐ-2 ĐÃ CHỐT (2026-07-09): A2'"
+verified: true
+method: ran-command
+status: active
+reversible: "Owner đổi quyết định → cập nhật PRODUCT_THESIS §3 + note bổ sung (append-only)."
+```

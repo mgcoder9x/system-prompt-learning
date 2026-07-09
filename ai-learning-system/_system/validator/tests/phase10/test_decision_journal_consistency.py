@@ -12,6 +12,9 @@ KIỂM:
 2. id DUY NHẤT (không tái dùng) trên toàn nhật ký (README quy ước: id vĩnh viễn, không dùng lại).
 3. Đặt ĐÚNG file theo tiền tố: DEC→decisions.md, DEV→deviations.md, TRD→tradeoffs.md, NOTE→notes.md.
 4. index.yaml hợp lệ + mỗi entry đủ field bắt buộc + type khớp tiền tố id.
+5. Referential-integrity (DEC-080): superseded_by / superseded_part_by / supersedes_part_of trong các
+   khối ```yaml của .md phải trỏ tới id THẬT (không dangling). IDs có cấu trúc ⇒ KHÔNG false-positive —
+   KHÁC evidence free-text (đã ĐO ~19% false-positive nên KHÔNG kiểm liveness token; xem NOTE-042/TRD-010).
 """
 from __future__ import annotations
 
@@ -90,3 +93,38 @@ def test_index_type_matches_prefix():
         prefix = e["id"].split("-", 1)[0]
         assert e["type"] == _PREFIX_TYPE[prefix], \
             f"{e['id']} có type={e['type']!r} không khớp tiền tố (phải {_PREFIX_TYPE[prefix]!r})"
+
+
+# --- DEC-080: intra-journal referential integrity (supersede pointers resolve) ---
+_FENCE = re.compile(r"```yaml\n(.*?)```", re.DOTALL)
+_XREF_FIELDS = ("superseded_by", "superseded_part_by", "supersedes_part_of")
+_IDPAT = re.compile(r"(?:DEC|DEV|TRD|NOTE)-\d+")
+
+
+def _supersede_pointers():
+    """(file, field, target_id) trích từ các khối ```yaml trong .md (nguồn sự thật)."""
+    out = []
+    for fname in _PREFIX_FILE.values():
+        text = (DECISIONS / fname).read_text(encoding="utf-8")
+        for block in _FENCE.findall(text):
+            d = yaml.safe_load(block)
+            if not isinstance(d, dict):
+                continue
+            for f in _XREF_FIELDS:
+                if d.get(f) is not None:
+                    for tgt in _IDPAT.findall(str(d[f])):
+                        out.append((fname, f, tgt))
+    return out
+
+
+def test_supersede_pointers_resolve():
+    """Mọi con trỏ supersede phải trỏ id entry THẬT (chống 'nói dối lịch sử quyết định').
+
+    Vì sao SOUND (không như liveness của evidence): id có cấu trúc cố định (DEC|DEV|TRD|NOTE)-\\d+ và
+    tập id đóng (headings .md) → so khớp tất định, KHÔNG false-positive. Evidence là free-text (path
+    một phần / ví dụ minh hoạ / ellipsis) → kiểm liveness đo được ~19% false-positive → CỐ Ý không làm
+    (xem NOTE-042). Đây là phần mở rộng hợp lệ của bijection (DEC-078), theo tiền lệ drift-guard DEC-005.
+    """
+    universe = set(_all_md_ids())
+    dangling = [(fn, f, tgt) for fn, f, tgt in _supersede_pointers() if tgt not in universe]
+    assert not dangling, f"supersede pointer trỏ id KHÔNG tồn tại (dangling): {dangling}"

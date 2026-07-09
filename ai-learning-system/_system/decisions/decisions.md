@@ -2643,3 +2643,77 @@ tests: "5 test (index_valid_fields / no_duplicate_ids / index_md_bijection / pre
 status: active
 reversible: "Gỡ file test. Không đụng dữ liệu/nhật ký (chỉ thêm kiểm)."
 ```
+
+---
+
+## DEC-079 — Lưu tài liệu chiến lược NGOÀI cây governed `_system` (PRODUCT_THESIS + landscape)
+
+```yaml
+id: DEC-079
+type: decision
+date: 2026-07-09
+title: "Đặt PRODUCT_THESIS.md ở gốc dự án + similar_systems_landscape.md trong repo_evaluations/ (role prior_art_comparison); KHÔNG guard prose bằng test"
+spec_ref: "none (spec silent — không nói về tài liệu chiến lược/đối-thủ)"
+summary: >
+  Phiên này (theo yêu cầu owner 'xem repo tương tự + có nên đập đi xây lại') tạo 2 tài liệu:
+  (a) PRODUCT_THESIS.md ở GỐC dự án (cạnh PROMPT_LEARNING_SYSTEM.md + end.md); (b)
+  _system/repo_lab/repo_evaluations/similar_systems_landscape.md — role mới 'prior_art_comparison'
+  (khác fsrs.md role 'install_dependency'). KHÔNG thêm test drift-guard cho 2 file này.
+rationale: >
+  (1) Tài liệu prose/chiến lược KHÔNG phải artifact máy-đọc mà code phụ thuộc → guard bằng test =
+  ceremony, trái R10.1 + tiền lệ DEC-058/NOTE-014/NOTE-024 (không thêm test vặt). (2) PRODUCT_THESIS đặt
+  ở gốc để dễ thấy + KHÔNG nằm trong _system → không rủi ro INV-18/drift-guard. (3) repo_evaluations/ vốn
+  là nơi chứa phiếu đánh giá (fsrs.md) → landscape đặt cùng chỗ đúng vai. Đã VERIFY không test nào canh
+  repo_lab (grep) nên thêm file an toàn, không đổi số test.
+alternatives:
+  - "Đặt trong _system/decisions/ — BỎ: lẫn tài liệu chiến lược với nhật ký máy-đọc; rủi ro coupling."
+  - "Tạo thư mục governed mới + drift-guard — BỎ: ceremony, chưa có nhu cầu máy-đọc (R10.1)."
+evidence:
+  - "PRODUCT_THESIS.md (gốc dự án) — tồn tại (tạo phiên này)"
+  - "_system/repo_lab/repo_evaluations/similar_systems_landscape.md — tồn tại (tạo phiên này)"
+  - "grep 'repo_eval|repo_lab' trong **/tests/**/*.py → No matches (repo_lab KHÔNG được guard)"
+verified: true
+method: read-source
+status: active
+reversible: "Xoá 2 file; không ảnh hưởng kernel/validator/test."
+```
+
+---
+
+## DEC-080 — Chống-drift GỐC (sound): referential-integrity cho nhật ký; TỪ CHỐI liveness token evidence (đo ~19% false-positive)
+
+```yaml
+id: DEC-080
+type: decision
+date: 2026-07-09
+title: "Thêm test_supersede_pointers_resolve (supersede pointers phải trỏ id thật) vào guard nhật ký; từ chối kiểm liveness token evidence vì đo được ~19% false-positive"
+spec_ref: "none (drift-guard test — tiền lệ DEC-005/DEC-078, additive, KHÔNG cần CR)"
+summary: >
+  Owner yêu cầu 'cách CỰC MẠNH chống drift'. Design-first + valid-thiết-kế-bằng-đo-thực-nghiệm rồi mới
+  triển khai. Điều tra 2 hướng cho hở evidence-liveness của nhật ký (NOTE-042/TRD-010):
+  (B) kiểm mọi token path/test trong 'evidence' còn tồn tại — ĐO trên dữ liệu thật: 28/149 token
+  ASSERT-FAIL (~19%) trên entry HỢP LỆ, do (a) path một phần ('phase10/test_x.py'), (b) ví dụ minh hoạ
+  ('alpha/a.py','zeta/z.py'), (c) ellipsis ('cr-0009-...md'). ⇒ B UNSOUND (đỏ oan / buộc viết lại lịch
+  sử, trái append-only). TỪ CHỐI B. Thay bằng deepening SOUND: mở rộng test_decision_journal_consistency.py
+  thêm test_supersede_pointers_resolve — mọi superseded_by/superseded_part_by/supersedes_part_of trong
+  khối yaml .md phải trỏ id THẬT (tập id đóng, cấu trúc cố định ⇒ 0 false-positive by construction).
+rationale: >
+  Fix BẢN CHẤT không fix ngọn: liveness-token là fix-ngọn unsound (đo được false-positive cao trên free-
+  text); referential-integrity là root sound (id có cấu trúc + tập đóng → tất định, không đỏ oan). Bổ sung
+  tự nhiên cho bijection DEC-078 (khép nốt toàn-vẹn tham chiếu NỘI BỘ nhật ký). Thêm test = additive theo
+  tiền lệ DEC-005/DEC-078 → không cần CR. Không over-reach: KHÔNG ép rewrite 133 entry cũ, KHÔNG guard prose.
+alternatives:
+  - "B (TRD-010): kiểm liveness mọi token file/test trong evidence — TỪ CHỐI (đo 28/149 ~19% false-positive; xem _scan_evidence)."
+  - "evidence_refs structured opt-in (tách ref máy-kiểm khỏi prose) — HOÃN: hữu ích, zero-FP, nhưng thêm gánh field; để owner cân nhắc khi cần liveness thật."
+  - "A: guard chéo tài liệu chiến lược (PRODUCT_THESIS↔landscape) — loại (prose, ceremony)."
+evidence:
+  - "read-source: validator/tests/phase10/test_decision_journal_consistency.py — thêm _supersede_pointers() + test_supersede_pointers_resolve() + docstring KIỂM #5"
+  - "ran-command (py -3 harness nạp module trực tiếp — máy này KHÔNG có .venv/pytest): 6/6 check GREEN + teeth-probe inject 'DEC-99999' → AssertionError (bắt dangling)"
+  - "ran-command (scan evidence, đã xoá script): 297 token; ASSERT-OK 121; ASSERT-FAIL 28 (~19% trên 149 checkable); SKIP-ambiguous 148 → chứng minh liveness-token UNSOUND"
+  - "ran-command (scan xref, đã xoá script): 2 supersede pointer (DEC-003→DEC-001; DEV-005→DEC-016) đều resolve → guard mới xanh + sound"
+verified: true
+method: ran-command
+status: active
+resolves: "NOTE-042 (open-question → resolved); TRD-010 (chọn giải pháp sound, từ chối B)"
+reversible: "Gỡ _supersede_pointers + test_supersede_pointers_resolve + docstring #5 → guard quay về DEC-078 structure-only. Không đụng dữ liệu/kernel."
+```

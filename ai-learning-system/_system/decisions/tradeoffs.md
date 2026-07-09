@@ -267,3 +267,82 @@ status: active
 owner_decision: "2026-07-08: owner CHỌN B ('Có') → xây lệnh retrofit. Đã hiện thực qua CR-0015/DEC-076 (chế độ cờ /curriculum --set-area-refs, transaction-FULL, RED-first 7 unit + 1 E2E chứng minh NOTE-039 giải; 513 passed). open-question ĐÓNG."
 reversible: "Đảo = gỡ CR-0015/DEC-076 (xem reversible ở DEC-076); quay về phương án A (chỉ blueprint-first)."
 ```
+
+---
+
+## TRD-009 — Nơi lưu tài liệu chiến lược: gốc dự án + repo_evaluations vs trong `_system/decisions` vs thư mục governed mới
+
+```yaml
+id: TRD-009
+type: tradeoff
+date: 2026-07-09
+title: "Đặt PRODUCT_THESIS.md + landscape ở đâu để truy vết được mà không tạo coupling/ceremony?"
+spec_ref: "none (spec silent); nguyên tắc R10.1 (tránh ceremony) + INV-18 (không lẫn dữ liệu/_system)"
+summary: >
+  Cần chỗ lưu 2 tài liệu chiến lược (PRODUCT_THESIS + phiếu đối-thủ) vừa dễ thấy, vừa truy-vết-được,
+  vừa không phá kỷ luật governance.
+alternatives:
+  - "A. Đặt trong _system/decisions/ — BỎ: trộn tài liệu chiến lược (prose, hay đổi) với nhật ký máy-đọc (có guard bijection) → coupling + rủi ro làm nhiễu guard."
+  - "B. Tạo thư mục governed mới + drift-guard riêng — BỎ: ceremony; chưa có nhu cầu máy-đọc/code phụ thuộc (R10.1, tiền lệ NOTE-024 bỏ scaffolding thừa)."
+  - "C (CHỌN): PRODUCT_THESIS.md ở GỐC dự án (cạnh spec + end.md) + similar_systems_landscape.md ở repo_evaluations/ (đúng vai phiếu đánh giá, cạnh fsrs.md)."
+chosen: "C — tối thiểu coupling, đúng vai, dễ thấy"
+rationale: >
+  repo_evaluations/ đã là nơi 'phiếu đánh giá repo' (fsrs.md) → landscape thuộc đúng họ (role
+  prior_art_comparison). PRODUCT_THESIS là tài liệu cấp-dự-án (không chỉ về _system) nên đặt ở gốc, ngoài
+  cây governed, tránh INV-18 và tránh phải guard prose. Truy vết vẫn đảm bảo: DEC-079 trỏ 2 file; landscape
+  trỏ ngược PRODUCT_THESIS.
+tradeoff_accepted: >
+  Chi phí: 2 file này KHÔNG được test tự động canh (có thể trôi/lỗi thời). Chấp nhận vì chúng là prose
+  chiến lược (người đọc + cập nhật thủ công), không phải nguồn-sự-thật máy-đọc; ép guard lên = ceremony.
+evidence:
+  - "PRODUCT_THESIS.md (gốc) + repo_evaluations/similar_systems_landscape.md — tồn tại"
+  - "repo_evaluations/fsrs.md (tiền lệ phiếu đánh giá cùng thư mục)"
+verified: true
+method: read-source
+status: active
+reversible: "Di chuyển/gộp file nếu sau này muốn governed; cập nhật DEC-079 tương ứng."
+```
+
+---
+
+## TRD-010 — Cách "cực mạnh chống drift" TIẾP THEO: mở rộng guard kiểm evidence-liveness vs giữ structure-only
+
+```yaml
+id: TRD-010
+type: tradeoff
+date: 2026-07-09
+title: "Sau DEC-078 (bijection index↔md), bước chống-drift mạnh kế tiếp là gì — và có nên code ngay không?"
+spec_ref: "DEC-078 (guard nhật ký hiện có); README decisions/ rule#1 (evidence phải trỏ nguồn kiểm-được); nguyên tắc owner design-first + R10.1"
+summary: >
+  Owner yêu cầu 'cách CỰC MẠNH chống drift'. Điều tra (đọc test_decision_journal_consistency.py): guard
+  hiện kiểm CẤU TRÚC (song-ánh index↔md 2 chiều, id duy nhất, đặt đúng file theo tiền tố, đủ field, type
+  khớp tiền tố) — đã là gốc cho tính toàn-vẹn nhật ký. NHƯNG guard KHÔNG kiểm 'evidence-liveness': một entry
+  verified:true + method:ran-test có thể trỏ tới test đã bị đổi tên/xoá → nhật ký 'nói dối' âm thầm mà guard
+  không bắt. Đây là hở chống-drift GỐC còn lại trong chính xương sống chống-drift.
+alternatives:
+  - "A. Guard chéo cho tài liệu mới (PRODUCT_THESIS↔landscape, kiểm link tồn tại) — BỎ: prose, ceremony (R10.1)."
+  - "B. Mở rộng guard nhật ký kiểm EVIDENCE-LIVENESS (entry ran-test/read-source phải trỏ path/test THẬT tồn tại) — ĐÚNG GỐC nhưng: evidence là free-text đa dạng → parse ngây thơ dễ FALSE-POSITIVE (đỏ oan) → thành nhiễu/ceremony ngược. Cần thiết kế robust (whitelist token .py/test_*, tolerant, chỉ áp entry mới) + owner duyệt."
+  - "C (CHỌN TẠM): GIỮ guard structure-only (DEC-078) + GHI NOTE-042 open-question mô tả thiết kế B, để owner quyết + thiết-kế-trước-khi-code (design-first)."
+chosen: "C — không code B vội; ghi open-question có thiết kế (NOTE-042)"
+rationale: >
+  Ba lý do CHÍNH XÁC: (1) DEC-078 đã bịt hở lớn nhất (bijection) — không có gì đang hỏng cấp bách. (2) Owner
+  nguyên tắc rõ: 'chuẩn bị thiết kế rõ → valid thiết kế → mới triển khai'; B là thay đổi có rủi ro false-
+  positive nên phải thiết kế cẩn thận, không thêm test vội (thêm ẩu = ceremony ngược, trái R10.1 + tiền lệ
+  NOTE-014/024). (3) B mở rộng phạm vi guard → xứng đáng 1 quyết định owner, không tự thêm (chống over-reach).
+tradeoff_accepted: >
+  Chi phí của C: evidence-liveness tạm thời vẫn dựa kỷ luật con người/AI (README rule#1), chưa tự-động. Chấp
+  nhận vì rủi ro thấp (entry cũ phần lớn ran-test tại thời điểm ghi) + đổi lấy tránh nhiễu false-positive.
+recommendation_for_owner: "Quyết: có nâng guard nhật ký lên kiểm evidence-liveness (phương án B) không? Nếu CÓ → tôi thiết kế robust-parse + kịch bản teeth (đổi tên test → phải đỏ) + chống false-positive, RED-first, rồi mới code."
+evidence:
+  - "read-source: test_decision_journal_consistency.py — _REQUIRED_FIELDS KHÔNG gồm 'evidence'; không hàm nào mở/kiểm nội dung evidence"
+  - "read-source: decisions/README.md rule#1 ('evidence phải trỏ nguồn kiểm-được') — hiện chỉ process-enforced, chưa code-enforced"
+resolution: >
+  2026-07-09 (cùng phiên): điều tra thực nghiệm CHỐT — phương án B (kiểm liveness token evidence) BỊ TỪ
+  CHỐI (đo 28/149 ~19% false-positive; xem DEC-080). Phương án A (guard chéo prose) loại (ceremony). Thay
+  bằng deepening SOUND ngoài danh sách A/B/C ban đầu: referential-integrity supersede pointers (DEC-080),
+  đã hiện thực + teeth-verified. Owner directive 'cực mạnh chống drift' được đáp ứng bằng cách sound nhất.
+verified: true
+method: read-source
+status: active
+reversible: "n/a (ghi nhận trade-off; hướng giải quyết đã chốt tại DEC-080)."
+```

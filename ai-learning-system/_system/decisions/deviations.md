@@ -218,3 +218,31 @@ method: ran-test
 status: active
 reversible: "Revert khối §3.2/§3.6/§11A + tiêu đề về v2.7 + move cr-0014 approved→(pending|rejected) + gỡ dòng changelog. Code CR-0011..0013 KHÔNG phụ thuộc prose spec (drift-guard bám commands.md/validation_rules/schema, không bám prose) → gỡ spec không làm đỏ test."
 ```
+
+---
+
+## DEV-008 — Đổi "TẠO thư mục 4-việc mới" → CẬP NHẬT `_system/decisions/` đã tồn tại
+
+```yaml
+id: DEV-008
+type: deviation
+date: 2026-07-09
+title: "Owner yêu cầu 'tạo 1 thư mục 4-việc'; thư mục ĐÃ tồn tại → theo chỉ dẫn 'nếu có rồi thì cập nhật', KHÔNG tạo mới mà cập nhật vào chỗ cũ"
+spec_ref: "Yêu cầu owner phiên 2026-07-09 (lặp lại yêu cầu trong end.md): 'tạo 1 thư mục ... 4 việc ... nếu có rồi thì cập nhật vào'"
+summary: >
+  Owner yêu cầu tạo thư mục chứa file làm 4 việc (quyết-định-tự-ra / chỗ-phải-đổi / trade-off / điều-nên-biết).
+  Kiểm chứng: _system/decisions/ ĐÃ tồn tại đủ 4 file (decisions.md/deviations.md/tradeoffs.md/notes.md) +
+  README ánh xạ CHÍNH XÁC 4 việc + index.yaml máy-đọc + drift-guard (test_decision_journal_consistency.py).
+  → KHÔNG tạo thư mục mới; ĐỔI thành cập nhật entry phiên này vào thư mục hiện có (đúng mệnh lệnh owner).
+rationale: >
+  Tạo thư mục 4-việc thứ hai sẽ (a) phân mảnh bộ nhớ xuyên-suốt (START_HERE bước 3 trỏ 1 nơi duy nhất),
+  (b) tạo id trùng / phá song-ánh index↔md của guard DEC-078, (c) trái chính chỉ dẫn 'nếu có rồi thì cập
+  nhật'. Cập nhật đúng chỗ = fix bản chất, không đẻ artifact thừa (tránh over-reach).
+evidence:
+  - "_system/decisions/README.md: bảng '4 việc' (decisions/deviations/tradeoffs/notes) khớp yêu cầu owner"
+  - "_system/decisions/{decisions,deviations,tradeoffs,notes}.md + index.yaml + test_decision_journal_consistency.py tồn tại"
+verified: true
+method: read-source
+status: active
+reversible: "n/a (không tạo artifact mới ngoài các entry nhật ký phiên này)."
+```
