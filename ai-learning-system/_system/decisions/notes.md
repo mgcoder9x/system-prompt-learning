@@ -1565,3 +1565,32 @@ method: ran-command
 status: active
 reversible: "Owner đổi quyết định → cập nhật PRODUCT_THESIS §3 + note bổ sung (append-only)."
 ```
+
+---
+
+## NOTE-045 — QĐ-3 (đo chất lượng dạy / Class D) ĐÃ CHỐT = C3 (cổng-quá-trình + retention)
+
+```yaml
+id: NOTE-045
+type: note
+date: 2026-07-09
+title: "Owner chốt QĐ-3 = C3 qua user_input: đo Class D bằng 2 trục PROXY máy-kiểm-được — (1) cổng-quá-trình (learned chỉ khi có dẫn chứng verbatim đủ 5 trục + chống bịa E-ASSESS-FAKEQUOTE, do sản phẩm ép); (2) retention FSRS theo thời gian. Ranh giới trung thực: proxy, KHÔNG phải chứng minh 'hiểu thật'"
+spec_ref: "PRODUCT_THESIS.md §3 QĐ-3; NOTE-043 (QĐ-1=A); NOTE-044 (QĐ-2=A2)"
+summary: >
+  Sau khi trình 3 hướng (A3 chỉ retention / B3 chỉ cổng quá trình / C3 cả hai) kèm lý do, owner CHỌN C3
+  qua user_input (phiên 2026-07-09). Đây là quyết định gốc thứ 3 (cuối) → 3 QĐ luận đề đã đủ.
+implications:
+  - "Trục 1 (cổng-quá-trình): tận dụng cơ chế sẵn có (gate INV-07/22 + evidence verbatim + mầm E-ASSESS-FAKEQUOTE) → hình thức hoá thành phép đo + property-test khi thiết kế A2. 'learned' do SẢN PHẨM ép, không do LLM tự nhận."
+  - "Trục 2 (retention): KPI = tỉ lệ nhớ đúng ở mốc ôn FSRS (đã có engine review/schedule). Là chỉ số kết-quả theo thời gian."
+  - "Định nghĩa CHÍNH XÁC 2 metric + cách enforce/đo → viết ở DESIGN_A2.md (design-first)."
+boundary: >
+  Quyết định KINH DOANH/định-hướng của owner (ghi ở notes). TUYỆT ĐỐI không hứa 'máy đảm bảo hiểu thật'
+  — chỉ 'đo proxy mạnh, kiểm chứng được'. Class D vẫn cần người; sản phẩm đo tiến trình + độ bền, không phán hiểu.
+evidence:
+  - "ran-command: user_input QĐ-3 (2026-07-09) → phản hồi owner = 'C3 — Cả hai: cổng-quá-trình + kết-quả-lưu-giữ (retention)'"
+  - "read-source: PRODUCT_THESIS.md §3 QĐ-3 — đã thêm khối '✅ QĐ-3 ĐÃ CHỐT (2026-07-09): C3'; §6 cập nhật 3 QĐ locked + next=DESIGN_A2.md"
+verified: true
+method: ran-command
+status: active
+reversible: "Owner đổi quyết định → cập nhật PRODUCT_THESIS §3/§6 + note bổ sung (append-only)."
+```
