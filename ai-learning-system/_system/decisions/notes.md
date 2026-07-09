@@ -1630,3 +1630,29 @@ method: ran-test
 status: active
 reversible: "DESIGN_A2 §6–§10 là tài liệu ngoài governed tree; xoá/sửa tự do, không ảnh hưởng kernel/suite."
 ```
+
+
+## NOTE-047 — Phase 0 (validate DESIGN_A2) coi như DUYỆT-theo-khuyến-nghị → sang Phase 1 (spec-first)
+
+```yaml
+id: NOTE-047
+type: note
+date: 2026-07-09
+title: "Owner ra chỉ-thị 'duyệt theo khuyến nghị từng bước' (chỉ-thị đứng) → diễn giải là DUYỆT Phase 0 của DESIGN_A2 (SD-1..4 + M1/M2 như khuyến nghị) và cho đi tiếp Phase 1. Bước kế = SPEC_PHASE1_ORCHESTRATOR.md (design-first, CHƯA code)"
+spec_ref: "DESIGN_A2 §6–§10 (SD-1..4, M1/M2, kế hoạch 5 pha); chỉ-thị đứng của owner; DEC-062 (tiền lệ 'proceed'=duyệt)"
+interpretation_honesty: >
+  Đây là DIỄN GIẢI chỉ-thị chung 'duyệt theo khuyến nghị', KHÔNG phải owner tick từng SD một. Coi như đã duyệt:
+  SD-1=Local-web, SD-2=import in-process (đúng API 520 test đang gọi — grounded), SD-3=BYO-key+optional local,
+  SD-4=offline-kernel; M1 (cổng-quá-trình, đã enforce) + M2 (retention read-only từ log FSRS); Phase 1 làm
+  TRƯỚC = orchestrator tối thiểu (không phải M2) vì chứng minh trực tiếp lời hứa QĐ-2 'sản phẩm ép kernel'.
+  MỌI lựa chọn này VẪN CHỈNH ĐƯỢC nếu owner muốn khác — ghi rõ để không tự-nhận-đồng-thuận-quá.
+next_step: >
+  Viết SPEC_PHASE1_ORCHESTRATOR.md (design-first): mục tiêu/phi-mục-tiêu, 3 bất biến INV-A2-1/2/3 dưới dạng
+  requirement TESTABLE (R-ORCH-1/2/3), giao diện orchestrator tối thiểu, ánh xạ hàm kernel (in-process),
+  kịch bản test RED-first, tiêu chí đạt, vị trí code cách-ly (ngoài kernel governed tree → không đụng suite 520).
+  Owner valid spec → mới RED-first → code. CHƯA code turn này.
+verified: true
+method: read-source
+status: active
+reversible: "Chỉ là ghi nhận diễn giải + kế hoạch; chưa tạo code. Owner đổi lựa chọn → cập nhật entry, chưa mất gì."
+```
