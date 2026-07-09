@@ -117,6 +117,8 @@ entries:
 
   - {id: DEC-082, type: decision,  status: active,        verified: true,  method: ran-test,    title: "Phase 1 A2 orchestrator hiện thực RED-first: product/orchestrator/teaching_session.py (TeachingSession author nội-dung-dạy rồi CHỐT qua kernel cmd_done = cổng; learned = committed AND report.ok(), phán quyết DO KERNEL). SD-2 import in-process (đúng API 520 test); verbatim check mirror C.normalize_for_match + kernel E-ASSESS-FAKEQUOTE backstop (defense-in-depth, đã chứng minh). RED-first 5 test GREEN (happy/gate-fail/reject-non-verbatim/fakequote-caught-by-kernel/deterministic); KHÔNG đổi kernel; kernel suite VẪN 520 (product/ tách biệt). Limit khai báo: headless, LLM stub, non-transactional content, chưa escape YAML quote"}
 
+  - {id: DEC-083, type: decision,  status: active,        verified: true,  method: ran-test,    title: "Phase 2 (M2 QĐ-3=C3) hiện thực RED-first: product/orchestrator/retention.py — báo cáo retention CHỈ-ĐỌC từ log FSRS (review_items[].log). 2 ngưỡng minh bạch: retention_rate (rating≥2 không-Again, quy ước FSRS) + solid_recall_rate (rating≥3 Good/Easy) + lapses (rating==1), cửa sổ 7/30/90 ngày so now-bơm-vào (tất định); + tổng/đã-review/mastered/stability-tb. now bơm→tất định; tách thuần-tính khỏi I/O. Proxy độ-bền KHÔNG phải chứng minh hiểu. RED-first 6 test GREEN; đọc qua kernel _all_lesson_models (read-only); KHÔNG đổi kernel; kernel suite VẪN 520; product suite 5→11"}
+
   # (2) deviations.md — đổi so với spec ban đầu
   - {id: DEV-001, type: deviation, status: active,        verified: true,  method: read-source, title: "Bỏ giả định State.New của FSRS (F-A)"}
   - {id: DEV-002, type: deviation, status: active,        verified: true,  method: read-source, title: "So due_date thay vì due_at_utc exact (F-B)"}

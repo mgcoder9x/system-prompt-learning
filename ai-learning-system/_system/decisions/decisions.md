@@ -2789,3 +2789,39 @@ method: ran-test
 status: active
 reversible: "Xoá product/ (orchestrator + tests) — kernel + suite 520 không phụ thuộc. Không đụng kernel/vault thật (test dùng tmp copy)."
 ```
+
+
+## DEC-083 — Phase 2 (M2 QĐ-3): báo cáo retention READ-ONLY từ log FSRS — proxy độ-bền, không đổi kernel
+
+```yaml
+id: DEC-083
+type: decision
+date: 2026-07-09
+title: "Hiện thực product/orchestrator/retention.py (Phase 2 = trục M2 của QĐ-3=C3): báo cáo retention CHỈ-ĐỌC tính từ log FSRS sẵn có (review_items[].log). RED-first 6 test GREEN; KHÔNG đổi kernel/vault; kernel suite VẪN 520 (product/ tách biệt)"
+spec_ref: "DESIGN_A2 §7 M2; DEC-045/audit.py (tiền lệ báo-cáo read-only); models.LogEvent(rating 1..4)/ReviewItem; fsrs_adapter.MAP_GRADE_TO_RATING (0/1/2/3→Again/Hard/Good/Easy=1/2/3/4)"
+summary: >
+  M2 = PROXY độ-bền-gợi-nhớ (KHÔNG phải chứng minh hiểu — ranh giới trung thực). retention_report(events, now,
+  windows) thuần-tính: với mỗi cửa sổ (7/30/90 ngày so mốc now BƠM VÀO — tất định), tính reviews +
+  retention_rate (rating≥2, không-Again, quy ước FSRS) + solid_recall_rate (rating≥3, Good/Easy) + lapses
+  (rating==1). compute_from_vault đọc MỌI lesson_state qua kernel _all_lesson_models (REUSE, read-only) → gộp
+  log + tổng review_items + số đã-review + số 'mastered' + stability trung bình.
+metric_decision (spec §7 nói loose 'grade≥2'; đây chốt CHÍNH XÁC): >
+  Báo CẢ HAI ngưỡng minh bạch thay vì ép một số: retention (rating≥2, không-Again) là quy ước FSRS 'nhớ được';
+  solid_recall (rating≥3, Good/Easy) là 'nhớ chắc'; lapses (Again) phơi riêng. Lý do: rating 2 (Hard) là
+  'nhớ-nhưng-khó' — gộp hay loại đều gây tranh cãi → phơi cả hai để owner/sản phẩm chọn headline, KHÔNG bịa
+  một con số duy nhất. Cửa sổ rỗng → rate=None (không 0/0, không crash — trung thực 'chưa đủ dữ liệu').
+key_decisions:
+  - "Read-only tuyệt đối (không transaction, không ghi) — như audit.py/schedule.py; đọc qua kernel _all_lesson_models."
+  - "now BƠM VÀO (tz-aware) → tất định, không lệ đồng hồ (bài học NOTE-010)."
+  - "Tách thuần-tính (retention_report) khỏi I/O (compute_from_vault) → test lõi tất định không cần vault."
+tests: >
+  RED-first: import orchestrator.retention → ModuleNotFoundError (đỏ) → hiện thực → 6 test GREEN:
+  rates_basic (ratings 1/2/3/4 → retention 3/4, solid 2/4, lapses 1), window_filtering (loại event ngoài cửa
+  sổ), empty_window_none (rate=None không crash), hard_counts_retention_not_solid (rating2: retention 1.0 /
+  solid 0.0), deterministic, compute_from_vault_readonly_no_crash (đọc demo_vault THẬT, trả cấu trúc).
+  product suite 5→11 passed; kernel suite VẪN 520 (không đổi kernel).
+verified: true
+method: ran-test
+status: active
+reversible: "Xoá product/orchestrator/retention.py + test — không phụ thuộc kernel; read-only nên không để lại dấu vết vault."
+```
