@@ -2717,3 +2717,38 @@ status: active
 resolves: "NOTE-042 (open-question → resolved); TRD-010 (chọn giải pháp sound, từ chối B)"
 reversible: "Gỡ _supersede_pointers + test_supersede_pointers_resolve + docstring #5 → guard quay về DEC-078 structure-only. Không đụng dữ liệu/kernel."
 ```
+
+
+## DEC-081 — R1 giải: orchestrator author nội-dung-dạy + kernel `cmd_done` gác; SỬA GỐC R-ORCH-2 (trust model)
+
+```yaml
+id: DEC-081
+type: decision
+date: 2026-07-09
+title: "Phase 1 R1 (spec-review gate): xác minh qua ĐỌC CODE THẬT — orchestrator author lesson.md (transcript+evidence) + lesson_state trực tiếp rồi gọi kernel cmd_done (FULL-validate) làm CỔNG; KHÔNG cần đổi kernel. Đồng thời SỬA GỐC R-ORCH-2 của SPEC_PHASE1 (viết sai: 'không bao giờ ghi vault trực tiếp' — mâu thuẫn thiết kế thật)"
+spec_ref: "SPEC_PHASE1_ORCHESTRATOR §2/§6; test_e2e_curriculum._make_lesson_learned; validate._check_gate_and_evidence (INV-07/22/22b); session.cmd_done docstring 'Driver KHÔNG sửa nội dung lesson — việc AI trong phiên'"
+finding_R1 (đọc code, không đoán): >
+  KHÔNG có lệnh kernel nào ghi NỘI DUNG DẠY (## Sessions transcript + #### Evidence). Thiết kế hệ CHỦ ĐÍCH
+  để AI (nay = orchestrator) tự author lesson.md, còn cmd_done FULL-validate là CỔNG: gate learned (INV-07
+  _GATE) + evidence tồn tại (E-ASSESS-NOEVIDENCE) + quote verbatim⊆transcript (E-ASSESS-FAKEQUOTE, validate.py
+  _check_gate_and_evidence dùng normalize_for_match + substring). Bằng chứng: test _make_lesson_learned author
+  lesson_state(status=learned+mastery) + lesson.md(Sessions+transcript+1 evidence/trục) TRỰC TIẾP → cmd_done
+  commit + validate PASS, KHÔNG đổi kernel. ⇒ R1 = orchestrator làm y vậy được, KHÔNG đổi kernel (không CR).
+root_fix_R-ORCH-2 (bản chất, không ngọn): >
+  R-ORCH-2 ban đầu ('orchestrator SHALL KHÔNG mở/ghi bất kỳ file nào trong learning_vault trực tiếp') MÂU
+  THUẪN thiết kế: không thể dạy mà không author nội dung lesson. Reformulate ĐÚNG trust-model:
+  (a) orchestrator ĐƯỢC author NỘI DUNG DẠY (transcript+evidence trong lesson.md) — đó là vai AI hợp lệ;
+  (b) MỌI CHUYỂN-TRẠNG-THÁI (learned/done/advance) CHỈ qua lệnh kernel (cmd_done...), KHÔNG tự set
+      lesson_state.status=learned rồi bỏ qua cmd_done;
+  (c) phán quyết 'learned' CHỈ hợp lệ khi cmd_done COMMIT (FULL-validate PASS) — evidence bịa/ungated bị
+      kernel chặn (E-ASSESS-FAKEQUOTE/E-GATE-FAIL). Kernel là cổng chân-lý, không phải thiện chí orchestrator.
+  R-ORCH-3 (verbatim) = defense-in-depth: orchestrator kiểm verbatim để FAIL SỚM, kernel kiểm lại (chốt).
+implication: >
+  Phase 1 KHÔNG đổi kernel (đúng moat). Điểm yếu cố hữu (author nội dung KHÔNG transactional — write rồi mới
+  validate; nếu validate fail thì lesson.md 'bẩn' nằm lại tới khi sửa) là HÀNH VI HỆ HIỆN TẠI, ghi nhận; cải
+  tiến 'ghi nội dung dạy transactional' là kernel-change tương lai qua CR §12, NGOÀI scope Phase 1.
+verified: true
+method: read-source
+status: active
+reversible: "Chỉ sửa prose SPEC + ghi nhận; chưa code."
+```

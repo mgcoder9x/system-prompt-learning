@@ -20,7 +20,7 @@ KHÔNG M2 retention (Phase 2); KHÔNG đóng gói (Phase 4); KHÔNG đổi kerne
 | ID | Bất biến (DESIGN_A2) | Requirement kiểm-được |
 |---|---|---|
 | **R-ORCH-1** | INV-A2-1 kernel-là-chân-lý-thực-thi | Orchestrator KHÔNG tự nhận "learned". "learned" chỉ đúng khi `session.cmd_done(...)` trả `committed=True` VÀ `report.ok()`. IF kernel trả `committed=False` → orchestrator SHALL báo not-learned + trả nguyên `report.errors` (không nuốt lỗi). |
-| **R-ORCH-2** | INV-A2-2 LLM không có quyền GHI | Orchestrator ghi vault CHỈ qua hàm `session.*` (transaction). SHALL KHÔNG mở/ghi bất kỳ file nào trong `learning_vault/` trực tiếp. (Kiểm bằng test chặn I/O: sau khi chạy buổi dạy, mọi thay đổi vault phải khớp tập file mà transaction_log ghi.) |
+| **R-ORCH-2** | INV-A2-2 (SỬA GỐC theo DEC-081 — trust model thật) | Orchestrator ĐƯỢC author NỘI DUNG DẠY (transcript + evidence trong `lesson.md`) — đó là vai AI hợp lệ (kernel KHÔNG có lệnh ghi nội dung dạy; `cmd_done` docstring: "việc AI trong phiên"). NHƯNG: (a) MỌI chuyển-trạng-thái (learned/done/advance) CHỈ qua lệnh kernel; (b) orchestrator SHALL KHÔNG tự set `lesson_state.status=learned` rồi bỏ qua `cmd_done`; (c) phán quyết "learned" CHỈ hợp lệ khi `cmd_done` COMMIT (FULL-validate PASS). Kernel là cổng, không phải thiện chí orchestrator. |
 | **R-ORCH-3** | INV-A2-3 evidence là lời THẬT | Evidence đưa vào lesson SHALL có `quote` là **chuỗi con verbatim** của câu-trả-lời-người-học đã nhập. IF một evidence-đề-xuất (kể cả do LLM sinh) KHÔNG phải substring của input người học → orchestrator SHALL từ chối evidence đó (không đẩy vào lesson), KHÔNG tự sửa lời người học. |
 | **R-ORCH-4** | Trung thực Class D | Orchestrator SHALL KHÔNG "chấm hộ" đạt-cổng khi chưa đủ điều kiện: quyết định learned/not do **kernel `done` (FULL-validate)** phán, orchestrator chỉ chuyển tiếp. |
 
@@ -74,9 +74,10 @@ class TeachingSession:
 
 ## 6. Rủi ro PHẢI kiểm TRƯỚC khi code (spec-review gate)
 
-- **R1 — Ghi evidence có cần đổi kernel không?** Nếu author lesson.md ## Sessions + `cmd_done` validate là ĐỦ
-  (không đổi kernel) → tốt. Nếu cần điểm-vào mới ở kernel → **DỪNG, mở change-request §12** (không sửa nóng).
-  → *Cần đọc `cmd_done` + luồng evidence/gate THẬT để xác nhận trước khi viết orchestrator.*
+- **R1 — ĐÃ GIẢI (DEC-081, đọc code thật):** author `lesson.md` (## Sessions + transcript + 1 evidence/trục,
+  quote ⊆ transcript) + `lesson_state`(status=learned+mastery) TRỰC TIẾP rồi `cmd_done` FULL-validate là ĐỦ —
+  **KHÔNG đổi kernel** (bằng chứng: test `_make_lesson_learned` làm đúng vậy, PASS). Cải tiến "ghi nội dung dạy
+  transactional" là kernel-change tương lai qua CR §12, NGOÀI scope Phase 1.
 - **R2 — Vị trí code:** `product/orchestrator/` (mới, NGOÀI `ai-learning-system/` kernel) + test-suite RIÊNG →
   KHÔNG đụng suite 520 của kernel. Kernel import qua sys.path (như test hiện có).
 - **R3 — Không tự-fetch mạng** (đúng ethos): LLM stub Phase 1; adapter thật Phase 4.
