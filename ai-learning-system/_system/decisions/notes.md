@@ -1594,3 +1594,39 @@ method: ran-command
 status: active
 reversible: "Owner đổi quyết định → cập nhật PRODUCT_THESIS §3/§6 + note bổ sung (append-only)."
 ```
+
+
+## NOTE-046 — Chuyển máy lần 5 (ENDGAME) + re-verify 520 + hoàn tất DESIGN_A2 (§6–§10) sau khi phiên trước đứt
+
+```yaml
+id: NOTE-046
+type: note
+date: 2026-07-09
+title: "Tiếp quản trên máy ENDGAME từ transcript end.md (phiên máy k.nguyen.manh.toan bị 'connection interrupted' lúc đang viết DESIGN_A2.md). Re-verify baseline THẬT + hoàn tất DESIGN_A2 §6–§10 (design-first, chưa code)"
+spec_ref: "end.md (transcript máy khác); PRODUCT_THESIS §6 (đề mục DESIGN_A2 cần phủ); DEC-079 (strategic docs ngoài governed tree); NOTE-034/037/040/041 (chuỗi chuyển máy)"
+summary: >
+  Owner trỏ end.md = hội thoại cuối từ máy khác, yêu cầu xem lại + tiếp CHÍNH XÁC. Kiểm THẬT trên ENDGAME
+  (không tin transcript): mọi công việc phiên trước CÓ MẶT (git develop HEAD a992744 sạch, sync origin;
+  commit db9d4c8 CR-0015 → 623bc00 DEC-077 → 86e9012 DEC-078 → 3 commit 'update' = DEC-079/080 +
+  PRODUCT_THESIS + QĐ-1/2/3 + DESIGN_A2 dở). venv trỏ C:\Users\toann\scoop py3.13.12 — interpreter TỒN TẠI
+  trên máy này nên venv chạy được (không phải dựng lại lần này). Re-verify: pytest 520 passed, validate
+  --scope full pass:true, selfcheck NGUYÊN VẸN, journal 143 entry guard xanh — KHỚP transcript.
+what_done: >
+  DESIGN_A2.md dừng ở §5 (mục tiêu/bất biến/sơ đồ/REUSE-NEW/ánh xạ lệnh). Hoàn tất §6–§10: SD-1 (đóng gói =
+  Local-web localhost, khuyến nghị), SD-2 (nhúng kernel = import in-process — ĐÚNG API 520 test đang gọi),
+  SD-3 (LLM adapter BYO-key + optional local), SD-4 (offline: kernel/ôn chạy offline, chỉ sinh-nội-dung-mới
+  cần LLM); định nghĩa CHÍNH XÁC M1 (cổng-quá-trình, đã enforce) + M2 (retention từ log FSRS, read-only);
+  rủi ro + kế hoạch validate 5 pha (Phase 0 validate design → Phase 1 orchestrator headless RED-first → ...).
+  Tất cả design-first, CHƯA code. DESIGN_A2 nằm NGOÀI governed tree (DEC-079) → không đụng suite (vẫn 520).
+honesty_boundary: >
+  Đây là hoàn tất TÀI LIỆU THIẾT KẾ để owner validate — KHÔNG phải triển khai. SD-1..4 + M1/M2 là KHUYẾN
+  NGHỊ chờ owner duyệt (§10), không tự chốt. Chưa lập spec, chưa code.
+evidence:
+  - "ran-command (ENDGAME): git log --oneline (db9d4c8/623bc00/86e9012 + 3 'update'); Test-Path PRODUCT_THESIS.md/DESIGN_A2.md = True; index 143 entry"
+  - "ran-test: pytest validator\\tests → 520 passed; validate.py --scope full → pass:true; selfcheck NGUYÊN VẸN"
+  - "read-source: DESIGN_A2.md §1–§5 (đã có) + PRODUCT_THESIS §6 (đề mục cần phủ) → viết §6–§10"
+verified: true
+method: ran-test
+status: active
+reversible: "DESIGN_A2 §6–§10 là tài liệu ngoài governed tree; xoá/sửa tự do, không ảnh hưởng kernel/suite."
+```
